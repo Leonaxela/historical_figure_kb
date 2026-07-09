@@ -102,10 +102,11 @@ function getEgoGraph(centerId, depth, category, limit) {
         FROM relationships r
         JOIN relation_types rt ON r.type_id = rt.id
         WHERE (r.source_id = ? OR r.target_id = ?)
+          AND (rt.direction != 'from' OR r.source_id = ?)
         ${category ? 'AND rt.category = ?' : ''}
         LIMIT ?
       `;
-      const params = [cid, cid, ...extraParams, limit];
+      const params = [cid, cid, cid, ...extraParams, limit];
       const relStmt = db.prepare(relSql);
       relStmt.bind(params);
       while (relStmt.step()) {
@@ -241,12 +242,20 @@ export function getStats() {
   const relationshipCount = db.exec('SELECT COUNT(*) as count FROM relationships')[0].values[0][0];
   const typeCount = db.exec('SELECT COUNT(*) as count FROM relation_types')[0].values[0][0];
 
-  // 连接最多的名人（按关系数排序）
+  // 连接最多的名人（按关系数排序，使用和列表一致的去重逻辑）
   const topConnected = db.exec(`
-    SELECT c.id, c.name, c.chinese_name, COUNT(*) as conn_count
+    SELECT c.id, c.name, c.chinese_name,
+      (SELECT COUNT(*) FROM (
+        SELECT 1 FROM relationships r2
+        JOIN relation_types rt ON r2.type_id = rt.id
+        WHERE (r2.source_id = c.id OR r2.target_id = c.id)
+          AND (rt.direction != 'from' OR r2.source_id = c.id)
+        GROUP BY
+          CASE WHEN r2.source_id < r2.target_id THEN r2.source_id ELSE r2.target_id END,
+          CASE WHEN r2.source_id < r2.target_id THEN r2.target_id ELSE r2.source_id END,
+          r2.type_id
+      )) as conn_count
     FROM celebrities c
-    JOIN relationships r ON c.id = r.source_id OR c.id = r.target_id
-    GROUP BY c.id
     ORDER BY conn_count DESC
     LIMIT 10
   `);
@@ -260,14 +269,13 @@ export function getStats() {
     ORDER BY count DESC
   `);
 
-  // 国籍分布
+  // 国籍分布（含朝代子分类如 中国_秦）
   const nationalityDist = db.exec(`
     SELECT nationality, COUNT(*) as count
     FROM celebrities
     WHERE nationality IS NOT NULL AND nationality != ''
     GROUP BY nationality
     ORDER BY count DESC
-    LIMIT 10
   `);
 
   return {
@@ -276,6 +284,6 @@ export function getStats() {
     typeCount,
     topConnected: topConnected[0]?.values?.map(v => ({ id: v[0], name: v[1], chinese_name: v[2], conn_count: v[3] })) ?? [],
     typeDistribution: typeDistribution[0]?.values?.map(v => ({ name: v[0], category: v[1], color: v[2], count: v[3] })) ?? [],
-    nationalityDistribution: nationalityDist[0]?.values?.map(v => ({ nationality: v[0], count: v[1] })) ?? [],
+    nationalityDistribution: nationalityDist[0]?.values?.map(v => ({ name: v[0], count: v[1] })) ?? [],
   };
 }

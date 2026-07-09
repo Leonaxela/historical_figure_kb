@@ -21,6 +21,8 @@ export const relationApi = {
   remove(id) { return api.delete(`/relationships/${id}`).then(r => r.data) },
   types() { return api.get('/relationships/types').then(r => r.data) },
   createType(data) { return api.post('/relationships/types', data).then(r => r.data) },
+  updateType(id, data) { return api.put(`/relationships/types/${id}`, data).then(r => r.data) },
+  removeType(id) { return api.delete(`/relationships/types/${id}`).then(r => r.data) },
 }
 
 // 图谱相关

@@ -96,17 +96,27 @@ export function getCelebrity(id) {
   return { ...celebrity, relations };
 }
 
+const DYNASTY_LABELS = {
+  chunqiu: '春秋', zhanguo: '战国', qin: '秦', xihan: '西汉', donghan: '东汉',
+  sanguo: '三国', xijin: '西晋', dongjin: '东晋', nanbei: '南北朝', sui: '隋',
+  tang: '唐', beisong: '北宋', nansong: '南宋', yuan: '元', ming: '明', qing: '清',
+};
+
 /**
  * 创建名人
  */
 export function createCelebrity(data) {
   const db = getDb();
-  const { name, chinese_name, his_id, birth_date, death_date, nationality, occupation, biography, image_url, wiki_id } = data;
-  const finalHisId = his_id || generateHisId(nationality, data.dynasty);
+  const { name, chinese_name, his_id, birth_date, death_date, nationality, dynasty, occupation, biography, image_url, wiki_id } = data;
+  // 中国人物：将朝代合并到国籍字段（如 "chunqiu" → "春秋"，存为 "中国_春秋"）
+  const dynLabel = DYNASTY_LABELS[dynasty] || dynasty;
+  const finalNationality = (nationality?.includes('中国') && dynasty)
+    ? `中国_${dynLabel}` : nationality
+  const finalHisId = his_id || generateHisId(nationality, dynasty);
   db.run(
     `INSERT INTO celebrities (name, chinese_name, his_id, birth_date, death_date, nationality, occupation, biography, image_url, wiki_id)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-    [name, chinese_name || null, finalHisId, birth_date || null, death_date || null, nationality || null, occupation || null, biography || null, image_url || null, wiki_id || null]
+    [name, chinese_name || null, finalHisId, birth_date || null, death_date || null, finalNationality || null, occupation || null, biography || null, image_url || null, wiki_id || null]
   );
   saveDb();
   return db.exec('SELECT last_insert_rowid() as id')[0].values[0][0];
@@ -127,11 +137,22 @@ export function updateCelebrity(id, data) {
   const fields = [];
   const params = [];
 
+  // 处理 dynasty → nationality 合并
+  let nat = data.nationality;
+  if (data.dynasty && nat?.includes('中国')) {
+    const dynLabel = DYNASTY_LABELS[data.dynasty] || data.dynasty;
+    nat = `中国_${dynLabel}`;
+  }
+
   for (const [key, value] of Object.entries(data)) {
-    if (['name', 'chinese_name', 'his_id', 'birth_date', 'death_date', 'nationality', 'occupation', 'biography', 'image_url', 'wiki_id'].includes(key)) {
+    if (['name', 'chinese_name', 'his_id', 'birth_date', 'death_date', 'occupation', 'biography', 'image_url', 'wiki_id'].includes(key)) {
       fields.push(`${key} = ?`);
       params.push(value ?? null);
     }
+  }
+  if (nat !== undefined) {
+    fields.push('nationality = ?');
+    params.push(nat ?? null);
   }
 
   if (fields.length === 0) return false;

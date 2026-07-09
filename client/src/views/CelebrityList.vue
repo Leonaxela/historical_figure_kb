@@ -2,7 +2,6 @@
   <div class="celebrity-list">
     <div class="page-header">
       <h1 class="page-title">名人库</h1>
-      <el-button type="primary" @click="showDialog = true" :icon="Plus" v-if="auth.isLoggedIn">新增名人</el-button>
     </div>
 
     <el-card shadow="never" class="filter-card">
@@ -50,131 +49,28 @@
     <el-empty v-if="!store.loading && store.list.length === 0" description="暂无数据" />
 
     <div class="pagination-wrap" v-if="store.total > store.pageSize">
+      <span class="pagination-total">共 {{ store.total }} 人</span>
       <el-pagination
         v-model:current-page="store.page"
         :page-size="store.pageSize"
         :total="store.total"
-        layout="total, prev, pager, next"
+        layout="prev, pager, next"
         @current-change="store.setPage"
       />
     </div>
 
-    <!-- 新增名人对话框 -->
-    <el-dialog v-model="showDialog" title="新增名人" width="560px" @close="resetForm">
-      <el-form ref="formRef" :model="form" :rules="rules" label-width="80px" size="small">
-        <el-form-item label="英文名" prop="name">
-          <el-input v-model="form.name" />
-        </el-form-item>
-        <el-form-item label="中文名" prop="chinese_name">
-          <el-input v-model="form.chinese_name" />
-        </el-form-item>
-        <el-row :gutter="12">
-          <el-col :span="12">
-            <el-form-item label="出生日期" prop="birth_date">
-              <el-input v-model="form.birth_date" placeholder="YYYY-MM-DD 或 公元前551年" />
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="逝世日期" prop="death_date">
-              <el-input v-model="form.death_date" placeholder="YYYY-MM-DD 或 至今" />
-            </el-form-item>
-          </el-col>
-        </el-row>
-        <el-form-item label="国籍" prop="nationality">
-          <el-input v-model="form.nationality" placeholder="如：中国、美国、古希腊" />
-        </el-form-item>
-        <el-form-item label="朝代" v-if="isChinese" prop="dynasty">
-          <el-select v-model="form.dynasty" placeholder="选择朝代（用于生成 his_id）" clearable style="width:100%">
-            <el-option v-for="d in dynasties" :key="d.id" :label="d.label" :value="d.id" />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="职业">
-          <el-input v-model="form.occupation" />
-        </el-form-item>
-        <el-form-item label="简介">
-          <el-input v-model="form.biography" type="textarea" :rows="3" />
-        </el-form-item>
-        <el-form-item label="his_id" v-if="previewHisId">
-          <el-tag>{{ previewHisId }}</el-tag>
-        </el-form-item>
-      </el-form>
-      <template #footer>
-        <el-button @click="showDialog = false">取消</el-button>
-        <el-button type="primary" @click="handleCreate">确定</el-button>
-      </template>
-    </el-dialog>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted } from 'vue'
-import { useRouter, useRoute } from 'vue-router'
+import { ref, onMounted } from 'vue'
+import { useRoute } from 'vue-router'
 import { useCelebrityStore } from '../stores/celebrities.js'
-import { celebrityApi } from '../api/index.js'
-import { Search, Plus } from '@element-plus/icons-vue'
-import { ElMessage } from 'element-plus'
+import { Search } from '@element-plus/icons-vue'
 import { displayNationality } from '../utils/dynasty.js'
-import { useAuthStore } from '../stores/auth.js'
 
-const auth = useAuthStore()
-
-const router = useRouter()
 const route = useRoute()
 const store = useCelebrityStore()
-const showDialog = ref(false)
-const formRef = ref(null)
-
-const dynasties = [
-  { id: 'chunqiu', label: '春秋' }, { id: 'zhanguo', label: '战国' },
-  { id: 'qin', label: '秦' }, { id: 'xihan', label: '西汉' }, { id: 'donghan', label: '东汉' },
-  { id: 'sanguo', label: '三国' }, { id: 'xijin', label: '西晋' }, { id: 'dongjin', label: '东晋' },
-  { id: 'nanbei', label: '南北朝' }, { id: 'sui', label: '隋' },
-  { id: 'tang', label: '唐' }, { id: 'beisong', label: '北宋' }, { id: 'nansong', label: '南宋' },
-  { id: 'yuan', label: '元' }, { id: 'ming', label: '明' }, { id: 'qing', label: '清' },
-]
-
-const form = ref({
-  name: '', chinese_name: '', birth_date: '', death_date: '',
-  nationality: '', dynasty: '', occupation: '', biography: '',
-})
-
-const rules = {
-  name: [{ required: true, message: '英文名为必填项', trigger: 'blur' }],
-  chinese_name: [{ required: true, message: '中文名为必填项', trigger: 'blur' }],
-}
-
-const isChinese = computed(() => {
-  return form.value.nationality && form.value.nationality.includes('中国')
-})
-
-const previewHisId = computed(() => {
-  if (!form.value.name && !form.value.chinese_name) return ''
-  if (form.value.dynasty) return form.value.dynasty + '_XXXXXX'
-  if (isChinese.value && !form.value.dynasty) return '请选择朝代'
-  return 'F_XXXXXX'
-})
-
-watch(() => form.value.nationality, () => {
-  if (!isChinese.value) form.value.dynasty = ''
-})
-
-function resetForm() {
-  form.value = { name: '', chinese_name: '', birth_date: '', death_date: '', nationality: '', dynasty: '', occupation: '', biography: '' }
-}
-
-async function handleCreate() {
-  const valid = await formRef.value.validate().catch(() => false)
-  if (!valid) return
-  const rand = String(Math.floor(100000 + Math.random() * 900000))
-  const his_id = form.value.dynasty
-    ? form.value.dynasty + '_' + rand
-    : 'F_' + rand
-  await celebrityApi.create({ ...form.value, his_id })
-  ElMessage.success('创建成功')
-  showDialog.value = false
-  resetForm()
-  store.fetchList()
-}
 
 let debounceTimer = null
 function debounceSearch() {
@@ -183,7 +79,6 @@ function debounceSearch() {
 }
 
 onMounted(() => {
-  // 从 URL 读取搜索参数
   const q = route.query.search
   if (q) {
     store.search = q
@@ -207,5 +102,6 @@ onMounted(() => {
 .card-en-name { font-size: 11px; color: #909399; text-align: center; margin-bottom: 6px; }
 .card-info { text-align: center; margin-bottom: 4px; }
 .card-rels { font-size: 12px; color: #409eff; text-align: center; }
-.pagination-wrap { display: flex; justify-content: center; margin-top: 24px; }
+.pagination-wrap { display: flex; align-items: center; justify-content: center; gap: 12px; margin-top: 24px; }
+.pagination-total { font-size: 13px; color: #909399; white-space: nowrap; }
 </style>

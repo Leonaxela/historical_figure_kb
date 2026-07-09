@@ -185,7 +185,7 @@ export async function seed() {
   db.run("DELETE FROM sqlite_sequence WHERE name IN ('celebrities', 'relationships')");
 
   const insertCeleb = db.prepare(
-    `INSERT INTO celebrities (name, chinese_name, his_id, birth_date, death_date, nationality, occupation, biography)
+    `INSERT OR IGNORE INTO celebrities (name, chinese_name, his_id, birth_date, death_date, nationality, occupation, biography)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
   );
   for (const c of celebrities) {

@@ -1,6 +1,6 @@
 <template>
-  <el-container class="app-container">
-    <el-header class="app-header">
+  <el-container class="app-container" :class="{ 'is-admin': isAdminRoute }">
+    <el-header class="app-header" v-if="!isAdminRoute">
       <div class="header-content">
         <div class="logo" @click="$router.push('/')">
           <div class="logo-icon">✦</div>
@@ -17,13 +17,9 @@
           <el-menu-item index="/celebrities">名人库</el-menu-item>
           <el-menu-item index="/graph">关系图谱</el-menu-item>
         </el-menu>
-        <div class="header-right" v-if="auth.isLoggedIn">
-            <span class="header-user">{{ auth.username }}</span>
-            <el-button text size="small" @click="auth.logout()">退出</el-button>
-        </div>
       </div>
     </el-header>
-    <el-main class="app-main">
+    <el-main class="app-main" :class="{ 'is-admin': isAdminRoute }">
       <router-view v-slot="{ Component }">
         <transition name="fade-slide" mode="out-in">
           <component :is="Component" />
@@ -36,15 +32,14 @@
 <script setup>
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
-import { useAuthStore } from './stores/auth.js'
 
 const route = useRoute()
-const auth = useAuthStore()
 const currentRoute = computed(() => {
   const path = route.path
   if (path === '/') return '/'
   return '/' + path.split('/').filter(Boolean)[0]
 })
+const isAdminRoute = computed(() => route.path.startsWith('/admin'))
 </script>
 
 <style>
@@ -90,13 +85,16 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto
   background-clip: text;
 }
 .header-menu { border-bottom: none !important; flex: 1; }
-.header-right { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
-.header-user { font-size: 13px; color: #909399; }
 .app-main {
   max-width: 1400px;
   margin: 0 auto;
   padding: 24px;
   width: 100%;
+}
+.app-main.is-admin {
+  max-width: none;
+  margin: 0;
+  padding: 0;
 }
 
 /* 路由过渡 */

@@ -75,6 +75,7 @@ export async function initSchema() {
 
   // 兼容旧数据库：尝试添加 his_id 列（已存在则忽略）
   try { db.run('ALTER TABLE celebrities ADD COLUMN his_id TEXT'); } catch (e) {}
+  try { db.run('ALTER TABLE celebrities DROP COLUMN dynasty'); } catch (e) {}
 
   db.run(`
     CREATE TABLE IF NOT EXISTS relation_types (
