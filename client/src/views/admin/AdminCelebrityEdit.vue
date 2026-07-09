@@ -26,8 +26,8 @@
               <el-form-item label="国籍">
                 <el-input v-model="editForm.nationality" />
               </el-form-item>
-              <el-form-item label="朝代" v-if="editForm.nationality?.includes('中国')">
-                <el-select v-model="editForm.dynasty" placeholder="选择朝代" style="width:100%">
+              <el-form-item label="朝代" v-if="editForm.nationality === '中国'">
+                <el-select v-model="editDynasty" placeholder="选择朝代" clearable style="width:100%" @change="onEditDynastyChange">
                   <el-option v-for="d in dynasties" :key="d.id" :label="d.label" :value="d.id" />
                 </el-select>
               </el-form-item>
@@ -140,7 +140,7 @@
                 <div class="tl-info">
                   <span class="tl-date">{{ ev.event_date }}</span>
                   <strong class="tl-title">{{ ev.title }}</strong>
-                  <el-tag size="small" class="tl-type">{{ ev.event_type }}</el-tag>
+                  <el-tag size="small" class="tl-type" :color="tlTypeColor(ev.event_type)" effect="dark">{{ ev.event_type }}</el-tag>
                   <span class="tl-desc" v-if="ev.description">{{ ev.description }}</span>
                 </div>
                 <div class="tl-actions">
@@ -218,6 +218,7 @@
         <div class="fs-actions">
           <el-button size="small" @click="fsPreview = !fsPreview">{{ fsPreview ? '编辑' : '预览' }}</el-button>
           <el-button size="small" @click="saveContents" :loading="contentSaving">保存</el-button>
+          <span class="fs-toast" :class="fsToastType" v-if="fsToast">{{ fsToast }}</span>
           <el-button size="small" @click="closeFullscreen">退出全屏</el-button>
         </div>
       </div>
@@ -247,26 +248,24 @@ const loading = ref(false)
 const saving = ref(false)
 const fileInput = ref(null)
 
-const dynasties = [
-  { id: 'chunqiu', label: '春秋' }, { id: 'zhanguo', label: '战国' },
-  { id: 'qin', label: '秦' }, { id: 'xihan', label: '西汉' }, { id: 'donghan', label: '东汉' },
-  { id: 'sanguo', label: '三国' }, { id: 'xijin', label: '西晋' }, { id: 'dongjin', label: '东晋' },
-  { id: 'nanbei', label: '南北朝' }, { id: 'sui', label: '隋' },
-  { id: 'tang', label: '唐' }, { id: 'beisong', label: '北宋' }, { id: 'nansong', label: '南宋' },
-  { id: 'yuan', label: '元' }, { id: 'ming', label: '明' }, { id: 'qing', label: '清' },
-]
-
-// ── 基本信息 ──
 const editForm = ref({})
+const editDynasty = ref('')
+const dynasties = Object.entries({ chunqiu:'春秋', zhanguo:'战国', qin:'秦', xihan:'西汉', donghan:'东汉', sanguo:'三国', xijin:'西晋', dongjin:'东晋', nanbei:'南北朝', sui:'隋', tang:'唐', beisong:'北宋', nansong:'南宋', yuan:'元', ming:'明', qing:'清' }).map(([id, label]) => ({ id, label }))
+
+function onEditDynastyChange(val) {
+  if (val) {
+    editForm.value.nationality = '中国'
+  }
+}
 
 async function saveProfile() {
   saving.value = true
   try {
     const data = { ...editForm.value }
-    if (data.dynasty) {
-      const suffix = data.his_id?.match(/_(\d{6})$/)
-      const rand = suffix ? suffix[1] : String(Math.floor(100000 + Math.random() * 900000))
-      data.his_id = data.dynasty + '_' + rand
+    // 如果有朝代，组合成 中国_春秋 格式保存
+    if (editDynasty.value && data.nationality === '中国') {
+      const found = dynasties.find(d => d.id === editDynasty.value)
+      data.nationality = '中国_' + (found ? found.label : editDynasty.value)
     }
     await celebrityApi.update(route.params.id, data)
     ElMessage.success('保存成功')
@@ -364,7 +363,12 @@ const contentSaving = ref(false)
 const previewTab = ref(null)
 const fullscreenTab = ref(null)
 const fsPreview = ref(false)
+const fsToast = ref('')
+const fsToastType = ref('')
 const tabLabels = { biography: '生平', works: '著作', influence: '影响', anecdotes: '轶事' }
+
+const TL_COLORS = { '升迁': '#67c23a', '贬谪': '#f56c6c', '创作': '#e6a23c', '婚丧': '#909399', '其他': '#409eff' }
+function tlTypeColor(type) { return TL_COLORS[type] || '#909399' }
 
 function renderMd(text) { return text ? md.render(text) : '' }
 function togglePreview(tab) { previewTab.value = previewTab.value === tab ? null : tab }
@@ -373,10 +377,16 @@ function closeFullscreen() { fullscreenTab.value = null; document.body.style.ove
 
 async function saveContents() {
   contentSaving.value = true
+  fsToast.value = ''
   try {
     await contentApi.save(route.params.id, contents.value)
-    ElMessage.success('内容已保存')
+    fsToast.value = '✅ 内容已保存'
+    fsToastType.value = 'success'
+  } catch (e) {
+    fsToast.value = '❌ ' + (e.message || '保存失败')
+    fsToastType.value = 'error'
   } finally { contentSaving.value = false }
+  setTimeout(() => { fsToast.value = '' }, 1500)
 }
 
 // ── 时间线 ──
@@ -424,7 +434,7 @@ async function loadTimeline() {
     const toYear = (s) => {
       const m = (s || '').match(/(?:公元前)?(\d+)/)
       if (!m) return 0
-      return (s||'').includes('公元前') ? -Number(m[1]) : Number(m[1])
+      return (s||'').includes('前') ? -Number(m[1]) : Number(m[1])
     }
     return toYear(a.event_date) - toYear(b.event_date)
   })
@@ -442,13 +452,13 @@ async function load() {
     const res = await celebrityApi.get(route.params.id)
     celebrity.value = res.data
     editForm.value = { ...res.data }
-    // 从 nationality 解析朝代：如 "中国_春秋" → nationality="中国" + dynasty="chunqiu"
+    // 解析 nationality 用于展示：中国_春秋 → 国籍=中国 + 下拉=春秋
     if (editForm.value.nationality?.startsWith('中国_')) {
       const label = editForm.value.nationality.replace('中国_', '')
       const found = dynasties.find(d => d.label === label)
       if (found) {
+        editDynasty.value = found.id
         editForm.value.nationality = '中国'
-        editForm.value.dynasty = found.id
       }
     }
   } finally { loading.value = false }
@@ -620,7 +630,7 @@ onMounted(async () => {
   background-color: #fff;
 }
 :deep(.edit-card .el-button:hover) {
-  background-color: #ecf5ff !important;
+  background-color: #ecf5ff;
 }
 :deep(.edit-card .el-button--danger) {
   --el-button-text-color: #f56c6c;
@@ -637,12 +647,13 @@ onMounted(async () => {
   --el-button-active-bg-color: #3a8ee6;
   background-color: #409eff;
 }
+:deep(.edit-card .el-button--primary:hover) {
+  background-color: #66b1ff;
+}
 
 /* ─── 时间线标签 ─── */
 .tl-type {
-  background: #e4e7ed !important;
   border: none !important;
-  color: #909399 !important;
   font-size: 11px;
   padding: 0 6px;
   line-height: 18px;
@@ -729,7 +740,10 @@ onMounted(async () => {
 }
 .fs-title { font-size: 16px; font-weight: 600; color: #303133; }
 .fs-name { color: #d97706; }
-.fs-actions { display: flex; gap: 8px; }
+.fs-actions { display: flex; align-items: center; gap: 8px; }
+.fs-toast { font-size: 13px; padding: 2px 10px; border-radius: 4px; }
+.fs-toast.success { color: #67c23a; background: #f0f9eb; }
+.fs-toast.error { color: #f56c6c; background: #fef0f0; }
 .fs-body { flex: 1; padding: 16px 20px; overflow: auto; display: flex; }
 .fs-textarea {
   width: 100%; height: 100%; min-height: 300px;

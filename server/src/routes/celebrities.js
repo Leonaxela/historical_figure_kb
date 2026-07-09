@@ -14,7 +14,7 @@ const router = Router();
 // ── 公开（GET）──
 router.get('/', (req, res) => {
   const { page = 1, pageSize = 20, search, nationality, occupation } = req.query;
-  const result = listCelebrities({ page: Number(page), pageSize: Number(pageSize), search, nationality, occupation });
+  const result = listCelebrities({ page: Number(page), pageSize: Number(pageSize), search, nationality, occupation, includeHidden: req.query.includeHidden === 'true' });
   res.json({ success: true, ...result });
 });
 
@@ -29,7 +29,7 @@ router.get('/occupations', (req, res) => {
 });
 
 router.get('/:id', (req, res) => {
-  const celebrity = getCelebrity(Number(req.params.id));
+  const celebrity = getCelebrity(Number(req.params.id), req.query.includeHidden === 'true');
   if (!celebrity) return res.status(404).json({ success: false, message: '未找到该名人' });
   res.json({ success: true, data: celebrity });
 });
@@ -46,9 +46,9 @@ router.get('/:id/timeline', (req, res) => {
 
 // ── 需登录（POST/PUT/DELETE）──
 router.post('/', authMiddleware, (req, res) => {
-  const { name, chinese_name, birth_date, death_date, nationality, occupation, biography, image_url, wiki_id, dynasty } = req.body;
+  const { name, chinese_name, birth_date, death_date, nationality, occupation, biography, image_url, wiki_id } = req.body;
   if (!name) return res.status(400).json({ success: false, message: '姓名为必填项' });
-  const id = createCelebrity({ name, chinese_name, birth_date, death_date, nationality, occupation, biography, image_url, wiki_id, dynasty });
+  const id = createCelebrity({ name, chinese_name, birth_date, death_date, nationality, occupation, biography, image_url, wiki_id });
   res.status(201).json({ success: true, data: { id } });
 });
 

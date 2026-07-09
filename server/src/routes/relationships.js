@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import {
   listRelationships, createRelationship, deleteRelationship,
-  getRelationTypes, createRelationType, deleteRelationType,
+  getRelationTypes, createRelationType, updateRelationType, deleteRelationType,
 } from '../services/relationshipService.js';
 import { authMiddleware } from './auth.js';
 
@@ -42,6 +42,12 @@ router.post('/types', authMiddleware, (req, res) => {
 
 router.delete('/types/:id', authMiddleware, (req, res) => {
   deleteRelationType(Number(req.params.id));
+  res.json({ success: true });
+});
+
+router.put('/types/:id', authMiddleware, (req, res) => {
+  const { name, category, description, direction, color } = req.body;
+  updateRelationType(Number(req.params.id), { name, category, description, direction, color });
   res.json({ success: true });
 });
 

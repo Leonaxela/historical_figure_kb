@@ -100,3 +100,20 @@ export function deleteRelationType(id) {
   saveDb();
   return true;
 }
+
+/**
+ * 更新关系类型
+ */
+export function updateRelationType(id, { name, category, description, direction, color }) {
+  const db = getDb();
+  const fields = []; const params = [];
+  if (name !== undefined) { fields.push('name = ?'); params.push(name); }
+  if (category !== undefined) { fields.push('category = ?'); params.push(category); }
+  if (description !== undefined) { fields.push('description = ?'); params.push(description); }
+  if (direction !== undefined) { fields.push('direction = ?'); params.push(direction); }
+  if (color !== undefined) { fields.push('color = ?'); params.push(color); }
+  if (fields.length === 0) return;
+  params.push(id);
+  db.run(`UPDATE relation_types SET ${fields.join(', ')} WHERE id = ?`, params);
+  saveDb();
+}

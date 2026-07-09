@@ -238,7 +238,7 @@ export function findPath(sourceId, targetId, maxDepth = 6) {
 export function getStats() {
   const db = getDb();
 
-  const celebrityCount = db.exec('SELECT COUNT(*) as count FROM celebrities')[0].values[0][0];
+  const celebrityCount = db.exec('SELECT COUNT(*) as count FROM celebrities WHERE status IS NOT 0')[0].values[0][0];
   const relationshipCount = db.exec('SELECT COUNT(*) as count FROM relationships')[0].values[0][0];
   const typeCount = db.exec('SELECT COUNT(*) as count FROM relation_types')[0].values[0][0];
 
@@ -273,7 +273,7 @@ export function getStats() {
   const nationalityDist = db.exec(`
     SELECT nationality, COUNT(*) as count
     FROM celebrities
-    WHERE nationality IS NOT NULL AND nationality != ''
+    WHERE nationality IS NOT NULL AND nationality != '' AND status IS NOT 0
     GROUP BY nationality
     ORDER BY count DESC
   `);

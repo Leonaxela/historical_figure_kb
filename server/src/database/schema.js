@@ -16,6 +16,7 @@ CREATE TABLE IF NOT EXISTS celebrities (
   image_url     TEXT,                         -- 头像图片 URL
   wiki_url      TEXT,                         -- 百科链接
   wikidata_id   TEXT UNIQUE,                  -- Wikidata QID，用于数据扩展
+  status        INTEGER DEFAULT 1,            -- 状态（1=显示，0=隐藏，仅影响游客）
   created_at    TEXT DEFAULT (datetime('now','localtime')),
   updated_at    TEXT DEFAULT (datetime('now','localtime'))
 );

@@ -170,7 +170,7 @@ async function loadTimeline() {
     const toYear = (s) => {
       const m = (s || '').match(/(?:公元前)?(\d+)/)
       if (!m) return 0
-      return (s||'').includes('公元前') ? -Number(m[1]) : Number(m[1])
+      return (s||'').includes('前') ? -Number(m[1]) : Number(m[1])
     }
     return toYear(a.event_date) - toYear(b.event_date)
   })

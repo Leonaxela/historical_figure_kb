@@ -20,6 +20,7 @@
             <th>国籍</th>
             <th>职业</th>
             <th>生卒</th>
+            <th class="col-center">状态</th>
             <th class="col-center">关联</th>
             <th class="col-actions">操作</th>
           </tr>
@@ -31,14 +32,16 @@
             <td>{{ row.nationality }}</td>
             <td>{{ row.occupation }}</td>
             <td>{{ row.birth_date || '?' }} ~ {{ row.death_date || '?' }}</td>
+            <td class="col-center"><span class="status-dot" :class="row.status === 0 ? 'off' : 'on'"></span></td>
             <td class="col-center">{{ row.relation_count ?? 0 }}</td>
             <td class="col-actions">
               <button class="table-btn" @click.stop="goEdit(row)">编辑</button>
               <button class="table-btn danger" @click.stop="handleDelete(row)">删除</button>
+              <button class="table-btn" @click.stop="handleToggleStatus(row)">{{ row.status === 0 ? '显示' : '隐藏' }}</button>
             </td>
           </tr>
           <tr v-if="!loading && list.length === 0">
-            <td colspan="7" class="td-empty">暂无数据</td>
+            <td colspan="8" class="td-empty">暂无数据</td>
           </tr>
         </tbody>
       </table>
@@ -82,10 +85,10 @@
           </el-col>
         </el-row>
         <el-form-item label="国籍">
-          <el-input v-model="form.nationality" placeholder="如：中国、美国、古希腊" />
+          <el-input v-model="form.nationality" placeholder="中国人物：中国_春秋。非中国：古希腊" />
         </el-form-item>
-        <el-form-item label="朝代" v-if="isChinese">
-          <el-select v-model="form.dynasty" placeholder="选择朝代" clearable style="width:100%">
+        <el-form-item label="朝代" v-if="form.nationality?.includes('中国')">
+          <el-select v-model="form.displayDynasty" placeholder="选择朝代" clearable style="width:100%" @change="onDynastyChange">
             <el-option v-for="d in dynasties" :key="d.id" :label="d.label" :value="d.id" />
           </el-select>
         </el-form-item>
@@ -94,9 +97,6 @@
         </el-form-item>
         <el-form-item label="简介">
           <el-input v-model="form.biography" type="textarea" :rows="3" />
-        </el-form-item>
-        <el-form-item label="his_id" v-if="previewHisId">
-          <el-tag>{{ previewHisId }}</el-tag>
         </el-form-item>
       </el-form>
       <template #footer>
@@ -108,11 +108,11 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { celebrityApi } from '../../api/index.js'
 import { Search, Plus } from '@element-plus/icons-vue'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 
 const router = useRouter()
 const list = ref([])
@@ -125,39 +125,36 @@ const creating = ref(false)
 const showCreate = ref(false)
 const formRef = ref(null)
 
-const dynasties = [
-  { id: 'chunqiu', label: '春秋' }, { id: 'zhanguo', label: '战国' },
-  { id: 'qin', label: '秦' }, { id: 'xihan', label: '西汉' }, { id: 'donghan', label: '东汉' },
-  { id: 'sanguo', label: '三国' }, { id: 'xijin', label: '西晋' }, { id: 'dongjin', label: '东晋' },
-  { id: 'nanbei', label: '南北朝' }, { id: 'sui', label: '隋' },
-  { id: 'tang', label: '唐' }, { id: 'beisong', label: '北宋' }, { id: 'nansong', label: '南宋' },
-  { id: 'yuan', label: '元' }, { id: 'ming', label: '明' }, { id: 'qing', label: '清' },
-]
+const DYNASTY_LABELS = {
+  chunqiu: '春秋', zhanguo: '战国', qin: '秦', xihan: '西汉', donghan: '东汉',
+  sanguo: '三国', xijin: '西晋', dongjin: '东晋', nanbei: '南北朝', sui: '隋',
+  tang: '唐', beisong: '北宋', nansong: '南宋', yuan: '元', ming: '明', qing: '清',
+}
+const dynasties = Object.entries(DYNASTY_LABELS).map(([id, label]) => ({ id, label }))
 
 const form = ref({
   name: '', chinese_name: '', birth_date: '', death_date: '',
-  nationality: '', dynasty: '', occupation: '', biography: '',
+  nationality: '', occupation: '', biography: '',
 })
+
+const displayDynasty = ref('')
+
+function onDynastyChange(val) {
+  if (val && DYNASTY_LABELS[val]) {
+    form.value.nationality = '中国_' + DYNASTY_LABELS[val]
+  } else {
+    form.value.nationality = '中国'
+  }
+}
 
 const rules = {
   name: [{ required: true, message: '英文名为必填项', trigger: 'blur' }],
   chinese_name: [{ required: true, message: '中文名为必填项', trigger: 'blur' }],
 }
 
-const isChinese = computed(() => form.value.nationality?.includes('中国'))
-const previewHisId = computed(() => {
-  if (!form.value.name && !form.value.chinese_name) return ''
-  if (form.value.dynasty) return form.value.dynasty + '_XXXXXX'
-  if (isChinese.value && !form.value.dynasty) return '请选择朝代'
-  return 'F_XXXXXX'
-})
-
-watch(() => form.value.nationality, () => {
-  if (!isChinese.value) form.value.dynasty = ''
-})
-
 function resetForm() {
-  form.value = { name: '', chinese_name: '', birth_date: '', death_date: '', nationality: '', dynasty: '', occupation: '', biography: '' }
+  form.value = { name: '', chinese_name: '', birth_date: '', death_date: '', nationality: '', occupation: '', biography: '' }
+  displayDynasty.value = ''
 }
 
 async function handleCreate() {
@@ -165,9 +162,7 @@ async function handleCreate() {
   if (!valid) return
   creating.value = true
   try {
-    const rand = String(Math.floor(100000 + Math.random() * 900000))
-    const his_id = form.value.dynasty ? form.value.dynasty + '_' + rand : 'F_' + rand
-    await celebrityApi.create({ ...form.value, his_id })
+    await celebrityApi.create(form.value)
     ElMessage.success('创建成功')
     showCreate.value = false
     resetForm()
@@ -178,7 +173,9 @@ async function handleCreate() {
 }
 
 async function handleDelete(row) {
-  if (!confirm(`确定删除「${row.chinese_name || row.name}」？此操作不可恢复。`)) return
+  try {
+    await ElMessageBox.confirm(`确定删除「${row.chinese_name || row.name}」？此操作不可恢复。`, '确认删除', { type: 'warning', confirmButtonText: '删除', cancelButtonText: '取消' })
+  } catch { return }
   try {
     await celebrityApi.remove(row.id)
     ElMessage.success('已删除')
@@ -190,6 +187,17 @@ async function handleDelete(row) {
 
 function goEdit(row) {
   router.push('/admin/celebrities/' + row.id)
+}
+
+async function handleToggleStatus(row) {
+  const newStatus = row.status === 0 ? 1 : 0
+  try {
+    await celebrityApi.update(row.id, { status: newStatus })
+    ElMessage.success(newStatus ? '已恢复显示' : '已隐藏（游客不可见）')
+    loadList()
+  } catch {
+    ElMessage.error('操作失败')
+  }
 }
 
 let debounceTimer = null
@@ -208,6 +216,7 @@ async function loadList() {
       page: page.value,
       pageSize: pageSize.value,
       search: searchText.value || undefined,
+      includeHidden: true,
     })
     list.value = res.data || []
     total.value = res.total || 0
@@ -315,6 +324,14 @@ onMounted(() => loadList())
 }
 .table-btn:hover { background: #ecf5ff; }
 .table-btn.danger { color: #f56c6c; }
+
+.status-dot {
+  display: inline-block;
+  width: 8px; height: 8px;
+  border-radius: 50%;
+}
+.status-dot.on { background: #67c23a; }
+.status-dot.off { background: #c0c4cc; }
 
 /* ─── 加载状态 ─── */
 .table-loading {

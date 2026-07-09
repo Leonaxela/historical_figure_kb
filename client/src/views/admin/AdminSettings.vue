@@ -97,7 +97,7 @@
 import { ref, onMounted } from 'vue'
 import { relationApi } from '../../api/index.js'
 import { Plus } from '@element-plus/icons-vue'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 
 const relationTypes = ref([])
 const showDialog = ref(false)
@@ -141,7 +141,9 @@ async function saveType() {
 }
 
 async function deleteType(row) {
-  if (!confirm(`确定删除关系类型「${row.name}」？`)) return
+  try {
+    await ElMessageBox.confirm(`确定删除关系类型「${row.name}」？`, '确认删除', { type: 'warning', confirmButtonText: '删除', cancelButtonText: '取消' })
+  } catch { return }
   try {
     await relationApi.removeType(row.id)
     ElMessage.success('已删除')

@@ -231,7 +231,7 @@ onMounted(async () => {
     nationalityDist.value = data.nationalityDistribution || []
     topConnected.value = data.topConnected || []
     const all = listRes.data || []
-    recentCelebrities.value = all.slice(-8).reverse()
+    recentCelebrities.value = all.slice(0, 8)
   } catch (e) {
     console.error('加载仪表盘数据失败', e)
   } finally {
