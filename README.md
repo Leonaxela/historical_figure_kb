@@ -4,7 +4,7 @@
 
 ## 技术栈
 
-- **前端**: Vite + Vue 3 + Element Plus + D3-Force
+- **前端**: Vite + Vue 3 + Element Plus + ECharts + D3-Force
 - **后端**: Node.js + Express + SQLite (sql.js)
 - **数据源**: Wikidata SPARQL / Wikipedia API
 
@@ -12,11 +12,10 @@
 
 ```bash
 # 1. 安装依赖
-cd server && npm install
-cd ../client && npm install
+npm run install:all
 
 # 2. 导入样例数据（30 位名人，28 条关系）
-cd server && npm run seed
+npm run seed
 
 # 3. 启动后端 (端口 3001)
 npm run dev:server
@@ -38,11 +37,13 @@ celebrity-graph/
 │   │   ├── routes/          # REST API 路由
 │   │   ├── services/        # 业务逻辑层
 │   │   ├── crawlers/        # 数据爬虫/导入模块
-│   │   └── seed/            # 内置样例数据
+│   │   ├── seed/            # 内置样例数据
+│   │   └── testmjs/         # 数据更新脚本模板
 │   └── data/                # SQLite 数据库文件
 ├── client/                  # Vue 3 前端
 │   ├── src/
-│   │   ├── views/           # 页面视图
+│   │   ├── views/           # 游客页面视图
+│   │   │   └── admin/       # 管理后台视图
 │   │   ├── components/      # 通用组件
 │   │   ├── stores/          # Pinia 状态管理
 │   │   ├── api/             # API 客户端
@@ -62,12 +63,22 @@ celebrity-graph/
 | PUT | /api/celebrities/:id | 更新名人 |
 | DELETE | /api/celebrities/:id | 删除名人 |
 | POST | /api/celebrities/bulk | 批量导入 |
+| PUT | /api/celebrities/:id/contents | 更新扩展内容（生平/著作/影响/轶事） |
+| GET | /api/celebrities/:id/timeline | 获取时间线 |
+| POST | /api/celebrities/:id/timeline | 新增时间线事件 |
+| PUT | /api/celebrities/timeline/:id | 更新时间线事件 |
+| DELETE | /api/celebrities/timeline/:id | 删除时间线事件 |
 | GET | /api/relationships | 关系列表 |
 | POST | /api/relationships | 创建关系 |
 | DELETE | /api/relationships/:id | 删除关系 |
+| GET | /api/relationships/types | 获取关系类型列表 |
+| POST | /api/relationships/types | 创建关系类型 |
+| PUT | /api/relationships/types/:id | 更新关系类型 |
+| DELETE | /api/relationships/types/:id | 删除关系类型 |
 | GET | /api/graph | 图谱数据（支持中心展开） |
 | GET | /api/graph/path | 两点间路径查找 |
 | GET | /api/graph/stats | 统计分析 |
+| POST | /api/upload/:id | 上传头像 |
 | POST | /api/import/wikidata | 从 Wikidata 导入 |
 | POST | /api/import/wikipedia | 从 Wikipedia 导入 |
 
@@ -76,12 +87,25 @@ celebrity-graph/
 ### celebrities（名人表）
 - name (英文名)
 - chinese_name (中文名)
+- his_id (系统 ID，格式：朝代_6位数字 / F_6位数字)
 - birth_date / death_date (生卒日期)
-- nationality (国籍)
+- nationality (国籍，中国人物存为"中国_朝代"格式)
 - occupation (职业)
 - biography (简介)
 - image_url (头像 URL)
 - wiki_id (Wiki 数据 ID，用于去重)
+
+### celebrity_contents（扩展内容表）
+- biography — 生平（Markdown）
+- works — 著作/作品（Markdown）
+- influence — 影响/地位（Markdown）
+- anecdotes — 轶事/典故（Markdown）
+
+### timeline_events（时间线表）
+- event_date — 日期
+- title — 事件标题
+- description — 事件描述
+- event_type — 类型（升迁/贬谪/创作/婚丧/其他）
 
 ### relation_types（关系类型表）
 - name (类型名)
