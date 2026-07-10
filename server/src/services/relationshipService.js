@@ -3,14 +3,19 @@ import { getDb, saveDb } from '../database/init.js';
 /**
  * 查询关系列表（分页 + 筛选）
  */
-export function listRelationships({ page = 1, pageSize = 50, type_id } = {}) {
+export function listRelationships({ page = 1, pageSize = 50, type_id, celebrity_id } = {}) {
   const db = getDb();
-  let where = '';
+  const conditions = [];
   const params = [];
   if (type_id) {
-    where = 'WHERE r.type_id = ?';
+    conditions.push('r.type_id = ?');
     params.push(type_id);
   }
+  if (celebrity_id) {
+    conditions.push('(r.source_id = ? OR r.target_id = ?)');
+    params.push(celebrity_id, celebrity_id);
+  }
+  const where = conditions.length ? 'WHERE ' + conditions.join(' AND ') : '';
 
   const countResult = db.exec(`SELECT COUNT(*) as total FROM relationships r ${where}`, params);
   const total = countResult[0]?.values[0]?.[0] ?? 0;

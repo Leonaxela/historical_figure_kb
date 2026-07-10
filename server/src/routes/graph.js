@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { getGraphData, findPath, getStats } from '../services/graphService.js';
+import { getGraphData, findPath, getStats, getWordCloud } from '../services/graphService.js';
 
 const router = Router();
 
@@ -32,6 +32,12 @@ router.get('/path', (req, res) => {
 router.get('/stats', (req, res) => {
   const stats = getStats();
   res.json({ success: true, data: stats });
+});
+
+// GET /api/graph/wordcloud — 词云数据
+router.get('/wordcloud', (req, res) => {
+  const data = getWordCloud();
+  res.json({ success: true, data });
 });
 
 export default router;

@@ -8,8 +8,8 @@ import { authMiddleware } from './auth.js';
 const router = Router();
 
 router.get('/', (req, res) => {
-  const { page = 1, pageSize = 50, type_id } = req.query;
-  const result = listRelationships({ page: Number(page), pageSize: Number(pageSize), type_id: type_id ? Number(type_id) : undefined });
+  const { page = 1, pageSize = 50, type_id, celebrityId } = req.query;
+  const result = listRelationships({ page: Number(page), pageSize: Number(pageSize), type_id: type_id ? Number(type_id) : undefined, celebrity_id: celebrityId ? Number(celebrityId) : undefined });
   res.json({ success: true, ...result });
 });
 

@@ -30,6 +30,7 @@ export const graphApi = {
   get(params) { return api.get('/graph', { params }).then(r => r.data) },
   path(sourceId, targetId, maxDepth) { return api.get('/graph/path', { params: { sourceId, targetId, maxDepth } }).then(r => r.data) },
   stats() { return api.get('/graph/stats').then(r => r.data) },
+  wordcloud() { return api.get('/graph/wordcloud').then(r => r.data) },
 }
 
 // 内容相关

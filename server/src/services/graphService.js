@@ -287,3 +287,26 @@ export function getStats() {
     nationalityDistribution: nationalityDist[0]?.values?.map(v => ({ name: v[0], count: v[1] })) ?? [],
   };
 }
+
+/**
+ * 获取词云数据（前50位，按 works+influence 字数排序）
+ */
+export function getWordCloud() {
+  const db = getDb();
+
+  const rows = db.exec(`
+    SELECT c.id, c.name, c.chinese_name,
+      COALESCE(LENGTH(cc.works) + LENGTH(cc.influence), 0) as weight
+    FROM celebrities c
+    LEFT JOIN celebrity_contents cc ON c.id = cc.celebrity_id
+    ORDER BY weight DESC
+    LIMIT 50
+  `);
+
+  return rows[0]?.values?.map(v => ({
+    id: v[0],
+    name: v[1],
+    chinese_name: v[2],
+    weight: v[3],
+  })) ?? [];
+}

@@ -52,6 +52,14 @@
       </div>
     </div>
 
+    <!-- 词云 -->
+    <div class="section">
+      <h3 class="section-title">☁️ 名人词云</h3>
+      <div class="chart-card">
+        <WordCloud3D :data="wordcloudData" :on-label-click="goCelebrity" />
+      </div>
+    </div>
+
     <!-- 饼图区域 -->
     <div class="section">
       <div class="charts-row">
@@ -108,8 +116,10 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { graphApi, celebrityApi } from '../../api/index.js'
 import { User, Setting, View, Share, Collection } from '@element-plus/icons-vue'
+import WordCloud3D from '../../components/WordCloud3D.vue'
 import VChart from 'vue-echarts'
 import { use } from 'echarts/core'
 import { PieChart } from 'echarts/charts'
@@ -123,6 +133,12 @@ const recentCelebrities = ref([])
 const statsData = ref({ celebrityCount: 0, relationshipCount: 0, typeCount: 0 })
 const nationalityDist = ref([])
 const topConnected = ref([])
+const wordcloudData = ref([])
+
+const router = useRouter()
+function goCelebrity(id) {
+  router.push('/admin/celebrity-view/' + id)
+}
 
 const stats = computed(() => [
   { label: '名人数', value: statsData.value.celebrityCount, icon: User, bg: 'linear-gradient(135deg, #3b82f6, #6366f1)', trend: null },
@@ -230,6 +246,8 @@ onMounted(async () => {
     statsData.value = data
     nationalityDist.value = data.nationalityDistribution || []
     topConnected.value = data.topConnected || []
+    const wcRes = await graphApi.wordcloud()
+    wordcloudData.value = wcRes.data || []
     const all = listRes.data || []
     recentCelebrities.value = all.slice(0, 8)
   } catch (e) {
@@ -490,4 +508,5 @@ onMounted(async () => {
   animation: lspin 0.7s linear infinite;
 }
 @keyframes lspin { to { transform: rotate(360deg); } }
+
 </style>

@@ -33,8 +33,8 @@ CREATE TABLE IF NOT EXISTS relation_types (
 -- 关系表：连接两个名人的边
 CREATE TABLE IF NOT EXISTS relationships (
   id              INTEGER PRIMARY KEY AUTOINCREMENT,
-  source_id       INTEGER NOT NULL REFERENCES celebrities(id) ON DELETE CASCADE,
-  target_id       INTEGER NOT NULL REFERENCES celebrities(id) ON DELETE CASCADE,
+  source_id       INTEGER NOT NULL REFERENCES celebrities(id),
+  target_id       INTEGER NOT NULL REFERENCES celebrities(id),
   relation_type_id INTEGER NOT NULL REFERENCES relation_types(id),
   description     TEXT,                        -- 关系描述
   start_year      TEXT,                        -- 关系起始年份

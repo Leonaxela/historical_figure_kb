@@ -70,7 +70,7 @@ const collapsed = ref(false)
 const currentRoute = computed(() => {
   const path = route.path
   // 详情页属于数据看板子界面
-  if (path.startsWith('/admin/celebrity-detail')) return '/admin/dashboard'
+  if (path.startsWith('/admin/celebrity-detail') || path.startsWith('/admin/celebrity-view')) return '/admin/dashboard'
   return path.startsWith('/admin/') ? path : '/admin/dashboard'
 })
 
@@ -80,6 +80,7 @@ const pageTitle = computed(() => {
     'admin-celebrities': '名人管理',
     'admin-celebrity-edit': '编辑名人',
     'admin-celebrity-detail': '数据看板',
+    'admin-celebrity-view': '数据看板',
     'admin-settings': '系统设置',
   }
   return map[route.name] || '管理后台'
