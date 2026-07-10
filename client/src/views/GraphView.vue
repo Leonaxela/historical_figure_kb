@@ -35,18 +35,14 @@
             <!-- 连线 -->
             <g class="edges">
               <template v-for="(e, i) in edges" :key="'e-' + i">
-                <path v-if="e.source && e.target"
-                  :d="edgeD(e)"
-                  fill="none"
+                                <path v-if="e.source && e.target"
+                  :d="edgeD(e)" fill="none"
                   :stroke="nodeColor(e.target)"
                   :stroke-width="hoveredEdge === i || selectedNode === (e.source?.id ?? e.source) || selectedNode === (e.target?.id ?? e.target) ? 2.5 : 1.5"
                   :opacity="hoveredEdge === i ? 1 : 0.6"
-                  :marker-end="(e.type_direction === 'from' || e.type_direction === 'both') ? 'url(#ae-c' + ((e.target?.id ?? e.target) % 8) + ')' : ''"
-                  :marker-start="e.type_direction === 'both' ? 'url(#as-c' + ((e.source?.id ?? e.source) % 8) + ')' : ''"
-                  class="graph-edge"
-                  @mouseenter="hoveredEdge = i"
-                  @mouseleave="hoveredEdge = null"
-                />
+                  :marker-end="(e.type_direction === 'from' || e.type_direction === 'both') ? 'url(#ae-c' + ((e.target?.id ?? e.target) % nodeColors.length) + ')' : ''"
+                  :marker-start="e.type_direction === 'both' ? 'url(#as-c' + ((e.source?.id ?? e.source) % nodeColors.length) + ')' : ''"
+                  @mouseenter="hoveredEdge = i" @mouseleave="hoveredEdge = null" />
               </template>
             </g>
 
@@ -173,31 +169,38 @@ function edgeEnd(s, t) {
   return { x: t.x - (dx / dist) * (nodeRadius(t) + 2), y: t.y - (dy / dist) * (nodeRadius(t) + 2) }
 }
 
-// 生成 SVG path 的 d 属性（平行边自动弯曲）
+function edgeStart(s, t) {
+  const dx = t.x - s.x, dy = t.y - s.y
+  const dist = Math.sqrt(dx * dx + dy * dy)
+  if (dist === 0) return { x: s.x, y: s.y }
+  return { x: s.x + (dx / dist) * (nodeRadius(s) + 2), y: s.y + (dy / dist) * (nodeRadius(s) + 2) }
+}
+
+// 全长度路径（用于 marker 定位）
 function edgeD(e) {
   const s = e.source, t = e.target
   if (!s?.x || !t?.x) return ''
   const end = edgeEnd(s, t)
+  const start = edgeStart(s, t)
   const offset = e._curve || 0
-  if (!offset) return `M ${s.x} ${s.y} L ${end.x} ${end.y}`
+  if (!offset) return `M ${start.x} ${start.y} L ${end.x} ${end.y}`
   const dx = t.x - s.x, dy = t.y - s.y
   const len = Math.sqrt(dx * dx + dy * dy) || 1
-  // 按 ID 大小固定方向：ID 小→大为正，大→小为反
   const sId = e.source?.id ?? e.source
   const tId = e.target?.id ?? e.target
   const dir = sId < tId ? 1 : -1
   const nx = -dy / len * offset * dir, ny = dx / len * offset * dir
-  const mx = (s.x + end.x) / 2, my = (s.y + end.y) / 2
-  return `M ${s.x} ${s.y} Q ${mx + nx} ${my + ny} ${end.x} ${end.y}`
+  const mx = (start.x + end.x) / 2, my = (start.y + end.y) / 2
+  return `M ${start.x} ${start.y} Q ${mx + nx} ${my + ny} ${end.x} ${end.y}`
 }
-
-// 平行边的标签位置（偏移方向与连线一致）
+// 平行边的标签位置（偏移方向与连线一致）// 平行边的标签位置（偏移方向与连线一致）// 平行边的标签位置（偏移方向与连线一致）// 平行边的标签位置（偏移方向与连线一致）
 function edgeLabelPos(e) {
   const s = e.source, t = e.target
   if (!s?.x || !t?.x) return { x: 0, y: 0 }
   const end = edgeEnd(s, t)
+  const start = edgeStart(s, t)
   const curve = e._curve || 0
-  if (!curve) return { x: (s.x + end.x) / 2, y: (s.y + end.y) / 2 - 4 }
+  if (!curve) return { x: (start.x + end.x) / 2, y: (start.y + end.y) / 2 - 4 }
   const dx = t.x - s.x, dy = t.y - s.y
   const len = Math.sqrt(dx * dx + dy * dy) || 1
   const sId = e.source?.id ?? e.source
@@ -208,7 +211,7 @@ function edgeLabelPos(e) {
   const d = Math.sqrt(curveNx * curveNx + curveNy * curveNy) || 1
   const nx = curveNx * (1 + 6 / d)
   const ny = curveNy * (1 + 6 / d)
-  return { x: (s.x + end.x) / 2 + nx, y: (s.y + end.y) / 2 - 4 + ny }
+  return { x: (start.x + end.x) / 2 + nx, y: (start.y + end.y) / 2 - 4 + ny }
 }
 
 async function loadGraph() {
@@ -365,7 +368,7 @@ function goToDetail() {
 async function loadOptions() {
   const [typesRes, listRes] = await Promise.all([
     relationApi.types(),
-    celebrityApi.list({ pageSize: 200 }),
+    celebrityApi.list({ pageSize: 9999 }),
   ])
   relationTypes.value = typesRes.data || []
   allCelebrities.value = listRes.data || []

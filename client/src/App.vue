@@ -21,9 +21,7 @@
     </el-header>
     <el-main class="app-main" :class="{ 'is-admin': isAdminRoute }">
       <router-view v-slot="{ Component }">
-        <transition name="fade-slide" mode="out-in">
           <component :is="Component" />
-        </transition>
       </router-view>
     </el-main>
   </el-container>

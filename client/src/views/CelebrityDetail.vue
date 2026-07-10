@@ -43,7 +43,11 @@
         <div class="rel-list" v-if="relationsList.length">
           <div v-for="r in relationsList" :key="r.key" class="rel-item" :style="{ borderLeftColor: r.type_color }">
             <div class="rel-info">
-              <span class="rel-arrow">{{ r.arrow }}</span>
+              <span class="rel-arrow">
+                <ArrowFrom v-if="r.arrow === 'from'" />
+                <ArrowBoth v-else-if="r.arrow === 'both'" />
+                <ArrowNone v-else />
+              </span>
               <span class="rel-name" @click="$router.push('/celebrities/' + r.otherId)">{{ r.otherName }}</span>
               <el-tag :color="r.type_color" class="rel-tag" size="small" effect="dark">{{ r.type_name }}</el-tag>
               <span class="rel-desc" v-if="r.description">{{ r.description }}</span>
@@ -108,6 +112,9 @@ import { celebrityApi, relationApi, contentApi } from '../api/index.js'
 import { ArrowLeft } from '@element-plus/icons-vue'
 import { displayNationality } from '../utils/dynasty.js'
 import MarkdownIt from 'markdown-it'
+import ArrowFrom from '../components/ArrowFrom.vue'
+import ArrowNone from '../components/ArrowNone.vue'
+import ArrowBoth from '../components/ArrowBoth.vue'
 
 const md = new MarkdownIt({ html: true, linkify: true })
 
@@ -137,7 +144,7 @@ const relationsList = computed(() => {
     result.push({
       ...r,
       key,
-      arrow: isSource ? '→' : '←',
+      arrow: r.type_direction || 'from',
       otherId: isSource ? Number(r.target_id) : Number(r.source_id),
       otherName: isSource ? (r.target_chinese_name || r.target_name) : (r.source_chinese_name || r.source_name),
     })

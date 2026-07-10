@@ -27,7 +27,11 @@
             <template #header><span>🔗 关系网络 ({{ relationsList.length }} 条)</span></template>
             <div class="rel-list" v-if="relationsList.length">
               <div v-for="r in relationsList" :key="r.key" class="rel-item" :style="{ borderLeftColor: r.type_color }">
-                <span class="rel-arrow">{{ r.arrow }}</span>
+                <span class="rel-arrow">
+                    <ArrowFrom v-if="r.arrow === 'from'" />
+                    <ArrowBoth v-else-if="r.arrow === 'both'" />
+                    <ArrowNone v-else />
+                  </span>
                 <span class="rel-name" @click="$router.push('/admin/celebrity-detail/' + r.otherId)">{{ r.otherName }}</span>
                 <el-tag :color="r.type_color" size="small" effect="dark">{{ r.type_name }}</el-tag>
               </div>
@@ -53,9 +57,8 @@
                       <path v-if="e.source && e.target" :d="edgeD(e)" fill="none"
                         :stroke="nodeColor(e.target)" :stroke-width="hoveredEdge === i ? 2.5 : 1.5"
                         :opacity="hoveredEdge === i ? 1 : 0.6"
-                        :marker-end="(e.type_direction === 'from' || e.type_direction === 'both') ? 'url(#ae-c' + ((e.target?.id ?? e.target) % 8) + ')' : ''"
-                        :marker-start="e.type_direction === 'both' ? 'url(#as-c' + ((e.source?.id ?? e.source) % 8) + ')' : ''"
-                        class="graph-edge" @mouseenter="hoveredEdge = i" @mouseleave="hoveredEdge = null" />
+                        :marker-end="(e.type_direction === 'from' || e.type_direction === 'both') ? 'url(#ae-c' + ((e.target?.id ?? e.target) % nodeColors.length) + ')' : ''"
+                        :marker-start="e.type_direction === 'both' ? 'url(#as-c' + ((e.source?.id ?? e.source) % nodeColors.length) + ')' : ''" @mouseenter="hoveredEdge = i" @mouseleave="hoveredEdge = null" />
                     </template>
                   </g>
                   <g class="edge-labels">
@@ -95,6 +98,9 @@ import { displayNationality } from '../../utils/dynasty.js'
 import * as d3Force from 'd3-force'
 import * as d3Zoom from 'd3-zoom'
 import * as d3Selection from 'd3-selection'
+import ArrowFrom from '../../components/ArrowFrom.vue'
+import ArrowNone from '../../components/ArrowNone.vue'
+import ArrowBoth from '../../components/ArrowBoth.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -110,6 +116,13 @@ const hoveredNode = ref(null)
 const hoveredEdge = ref(null)
 
 const nodeColors = ['#409eff', '#67c23a', '#f56c6c', '#909399', '#e6a23c', '#8b5cf6', '#10b981']
+
+function edgeStart(s, t) {
+  const dx = t.x - s.x, dy = t.y - s.y
+  const dist = Math.sqrt(dx * dx + dy * dy)
+  if (dist === 0) return { x: s.x, y: s.y }
+  return { x: s.x + (dx / dist) * (nodeRadius(s) + 2), y: s.y + (dy / dist) * (nodeRadius(s) + 2) }
+}
 
 function nodeRadius(n) {
   return Number(n.id) === Number(route.params.id) ? 24 : 16
@@ -131,28 +144,30 @@ function edgeD(e) {
   const s = e.source, t = e.target
   if (!s?.x || !t?.x) return ''
   const end = edgeEnd(s, t)
+  const start = edgeStart(s, t)
   const offset = e._curve || 0
-  if (!offset) return `M ${s.x} ${s.y} L ${end.x} ${end.y}`
+  if (!offset) return `M ${start.x} ${start.y} L ${end.x} ${end.y}`
   const dx = t.x - s.x, dy = t.y - s.y, len = Math.sqrt(dx * dx + dy * dy) || 1
   const sId = e.source?.id ?? e.source, tId = e.target?.id ?? e.target
   const dir = sId < tId ? 1 : -1
   const nx = -dy / len * offset * dir, ny = dx / len * offset * dir
-  const mx = (s.x + end.x) / 2, my = (s.y + end.y) / 2
-  return `M ${s.x} ${s.y} Q ${mx + nx} ${my + ny} ${end.x} ${end.y}`
+  const mx = (start.x + end.x) / 2, my = (start.y + end.y) / 2
+  return `M ${start.x} ${start.y} Q ${mx + nx} ${my + ny} ${end.x} ${end.y}`
 }
 
 function edgeLabelPos(e) {
   const s = e.source, t = e.target
   if (!s?.x || !t?.x) return { x: 0, y: 0 }
   const end = edgeEnd(s, t)
+  const start = edgeStart(s, t)
   const curve = e._curve || 0
-  if (!curve) return { x: (s.x + end.x) / 2, y: (s.y + end.y) / 2 - 4 }
+  if (!curve) return { x: (start.x + end.x) / 2, y: (start.y + end.y) / 2 - 4 }
   const dx = t.x - s.x, dy = t.y - s.y, len = Math.sqrt(dx * dx + dy * dy) || 1
   const sId = e.source?.id ?? e.source, tId = e.target?.id ?? e.target
   const dir = sId < tId ? 1 : -1
   const curveNx = -dy / len * curve * dir, curveNy = dx / len * curve * dir
   const d = Math.sqrt(curveNx * curveNx + curveNy * curveNy) || 1
-  return { x: (s.x + end.x) / 2 + curveNx * (1 + 6 / d), y: (s.y + end.y) / 2 - 4 + curveNy * (1 + 6 / d) }
+  return { x: (start.x + end.x) / 2 + curveNx * (1 + 6 / d), y: (start.y + end.y) / 2 - 4 + curveNy * (1 + 6 / d) }
 }
 
 const relationsList = computed(() => {
@@ -166,7 +181,7 @@ const relationsList = computed(() => {
     const b = Math.max(Number(x.source_id), Number(x.target_id))
     const k = a + '-' + b + '-' + x.type_id
     if (seen.has(k)) continue; seen.add(k)
-    r.push({ ...x, key: k, arrow: isSource ? '→' : '←', otherId: isSource ? Number(x.target_id) : Number(x.source_id), otherName: isSource ? (x.target_chinese_name || x.target_name) : (x.source_chinese_name || x.source_name) })
+    r.push({ ...x, key: k, arrow: x.type_direction || 'from', otherId: isSource ? Number(x.target_id) : Number(x.source_id), otherName: isSource ? (x.target_chinese_name || x.target_name) : (x.source_chinese_name || x.source_name) })
   }
   return r
 })

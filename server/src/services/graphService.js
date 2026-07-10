@@ -269,6 +269,9 @@ export function getStats() {
     ORDER BY count DESC
   `);
 
+  // 关系类别数（从 relation_types 表直接统计，包含无数据的类别）
+  const categoryCount = db.exec(`SELECT COUNT(DISTINCT category) FROM relation_types`)[0]?.values[0]?.[0] ?? 0;
+
   // 国籍分布（含朝代子分类如 中国_秦）
   const nationalityDist = db.exec(`
     SELECT nationality, COUNT(*) as count
@@ -282,6 +285,7 @@ export function getStats() {
     celebrityCount,
     relationshipCount,
     typeCount,
+    categoryCount,
     topConnected: topConnected[0]?.values?.map(v => ({ id: v[0], name: v[1], chinese_name: v[2], conn_count: v[3] })) ?? [],
     typeDistribution: typeDistribution[0]?.values?.map(v => ({ name: v[0], category: v[1], color: v[2], count: v[3] })) ?? [],
     nationalityDistribution: nationalityDist[0]?.values?.map(v => ({ name: v[0], count: v[1] })) ?? [],

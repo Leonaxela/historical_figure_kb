@@ -144,6 +144,7 @@ const stats = computed(() => [
   { label: '名人数', value: statsData.value.celebrityCount, icon: User, bg: 'linear-gradient(135deg, #3b82f6, #6366f1)', trend: null },
   { label: '关系数', value: statsData.value.relationshipCount, icon: Share, bg: 'linear-gradient(135deg, #10b981, #059669)', trend: null },
   { label: '关系类型', value: statsData.value.typeCount, icon: Collection, bg: 'linear-gradient(135deg, #f59e0b, #d97706)', trend: null },
+  { label: '关系类别', value: statsData.value.categoryCount || 0, icon: Collection, bg: 'linear-gradient(135deg, #8b5cf6, #7c3aed)', trend: null },
 ])
 
 const dynastyColors = {
@@ -240,7 +241,7 @@ onMounted(async () => {
   try {
     const [statsRes, listRes] = await Promise.all([
       graphApi.stats(),
-      celebrityApi.list({ pageSize: 200 }),
+      celebrityApi.list({ pageSize: 500 }),
     ])
     const data = statsRes.data || statsData.value
     statsData.value = data

@@ -39,7 +39,11 @@
             <div class="rel-list" v-if="relationsList.length">
               <div v-for="r in relationsList" :key="r.key" class="rel-item" :style="{ borderLeftColor: r.type_color }">
                 <div class="rel-info">
-                  <span class="rel-arrow">{{ r.arrow }}</span>
+                  <span class="rel-arrow">
+                    <ArrowFrom v-if="r.arrow === 'from'" />
+                    <ArrowBoth v-else-if="r.arrow === 'both'" />
+                    <ArrowNone v-else />
+                  </span>
                   <span class="rel-name">{{ r.otherName }}</span>
                   <el-tag :color="r.type_color" size="small" effect="dark">{{ r.type_name }}</el-tag>
                   <span class="rel-desc" v-if="r.description">{{ r.description }}</span>
@@ -85,6 +89,9 @@ import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { celebrityApi, relationApi, contentApi } from '../../api/index.js'
 import MarkdownIt from 'markdown-it'
+import ArrowFrom from '../../components/ArrowFrom.vue'
+import ArrowNone from '../../components/ArrowNone.vue'
+import ArrowBoth from '../../components/ArrowBoth.vue'
 
 const md = new MarkdownIt({ html: true, linkify: true })
 
@@ -123,7 +130,11 @@ async function loadRelations() {
   const res = await relationApi.list({ celebrityId: route.params.id })
   const rels = res.data || []
   const id = Number(route.params.id)
-  relationsList.value = rels.map(r => {
+  relationsList.value = rels.filter(r => {
+    // from 方向只显示当前人为 source 的记录（反方向由对应的关系类型处理）
+    if (r.type_direction === 'from') return r.source_id === id
+    return true
+  }).map(r => {
     const isSource = r.source_id === id
     const otherId = isSource ? r.target_id : r.source_id
     const otherName = isSource ? (r.target_chinese_name || r.target_name) : (r.source_chinese_name || r.source_name)
@@ -131,7 +142,7 @@ async function loadRelations() {
       key: r.id + '-' + r.type_id,
       otherId,
       otherName,
-      arrow: isSource ? '→' : '←',
+      arrow: r.type_direction || 'from',
       type_name: r.type_name || '',
       type_color: r.type_color || '#409eff',
       description: r.description,
