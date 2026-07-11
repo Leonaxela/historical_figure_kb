@@ -48,13 +48,24 @@ export function listRelationships({ page = 1, pageSize = 50, type_id, celebrity_
  */
 export function createRelationship({ source_id, target_id, type_id, description, start_date, end_date }) {
   const db = getDb();
+
+  // 检查是否已存在（利用 UNIQUE 约束）
+  const existing = db.exec(
+    'SELECT id FROM relationships WHERE source_id = ? AND target_id = ? AND type_id = ?',
+    [source_id, target_id, type_id]
+  );
+  if (existing[0]?.values?.length > 0) {
+    return { error: '关系已存在' };
+  }
+
   db.run(
-    `INSERT OR IGNORE INTO relationships (source_id, target_id, type_id, description, start_date, end_date)
-     VALUES (?, ?, ?, ?, ?, ?)`,
+    `INSERT INTO relationships (source_id, target_id, type_id, description, start_date, end_date, created_at)
+     VALUES (?, ?, ?, ?, ?, ?, datetime('now', 'localtime'))`,
     [source_id, target_id, type_id, description || null, start_date || null, end_date || null]
   );
   saveDb();
-  return db.exec('SELECT last_insert_rowid() as id')[0].values[0][0];
+  const id = db.exec('SELECT last_insert_rowid() as id')[0].values[0][0];
+  return { id };
 }
 
 /**

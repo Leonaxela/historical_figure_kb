@@ -1,7 +1,7 @@
 <template>
   <div class="detail-page" v-loading="loading">
     <div class="detail-header">
-      <button class="back-arrow" @click="$router.push('/admin/dashboard')">&lt;</button>
+      <button class="back-arrow" @click="goBack">&lt;</button>
       <h2 class="detail-title" v-if="celebrity"><span class="title-name">{{ celebrity.chinese_name || celebrity.name }}</span> 关系详情</h2>
       <h2 class="detail-title" v-else>关系详情</h2>
     </div>
@@ -104,6 +104,11 @@ import ArrowBoth from '../../components/ArrowBoth.vue'
 
 const route = useRoute()
 const router = useRouter()
+
+function goBack() {
+  router.push('/admin/dashboard')
+}
+
 const celebrity = ref(null)
 const loading = ref(false)
 const graphLoading = ref(false)

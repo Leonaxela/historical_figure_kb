@@ -28,6 +28,13 @@ const routes = [
 const router = createRouter({
   history: createWebHistory(),
   routes,
+  scrollBehavior(to, from, savedPosition) {
+    // 从详情页返回看板时，由看板组件自己恢复滚动位置
+    if (to.name === 'admin-dashboard' && sessionStorage.getItem('dashboardScrollY')) {
+      return false
+    }
+    return { top: 0 }
+  },
 })
 
 // ── 路由守卫 ──

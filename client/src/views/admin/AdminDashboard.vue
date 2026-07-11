@@ -43,7 +43,7 @@
     <div class="section">
       <h3 class="section-title">🔥 关系热度排行 </h3>
       <div class="hot-list">
-        <div class="hot-item" v-for="(item, i) in topConnected" :key="item.id" @click="$router.push('/admin/celebrity-detail/' + item.id)">
+        <div class="hot-item" v-for="(item, i) in topConnected" :key="item.id" @click="goDetail(item.id)">
           <span class="hot-rank" :class="'rank-' + (i + 1)">{{ i + 1 }}</span>
           <span class="hot-name">{{ item.chinese_name || item.name }}</span>
           <span class="hot-en-name" v-if="item.chinese_name">{{ item.name }}</span>
@@ -146,7 +146,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import { graphApi, celebrityApi, tagApi } from '../../api/index.js'
 import { User, Setting, View, Share, Collection } from '@element-plus/icons-vue'
@@ -171,8 +171,20 @@ const tagDialogTitle = ref('')
 const tagCelebrities = ref([])
 
 const router = useRouter()
+
+function saveScroll() {
+  const el = document.querySelector('.admin-content')
+  if (el) sessionStorage.setItem('dashboardScrollY', el.scrollTop)
+}
+
 function goCelebrity(id) {
+  saveScroll()
   router.push('/admin/celebrity-view/' + id)
+}
+
+function goDetail(id) {
+  saveScroll()
+  router.push('/admin/celebrity-detail/' + id)
 }
 
 const stats = computed(() => [
@@ -272,6 +284,13 @@ const countryOption = computed(() => ({
 }))
 
 onMounted(async () => {
+  // 立即恢复滚动位置（抢在数据加载和渲染之前，避免闪白顶部）
+  const saved = sessionStorage.getItem('dashboardScrollY')
+  if (saved) {
+    const el = document.querySelector('.admin-content')
+    if (el) el.scrollTo(0, parseInt(saved))
+  }
+
   tableLoading.value = true
   try {
     const [statsRes, listRes] = await Promise.all([
@@ -292,6 +311,18 @@ onMounted(async () => {
     console.error('加载仪表盘数据失败', e)
   } finally {
     tableLoading.value = false
+  }
+
+  // 数据加载完后再次恢复，补偿容器高度变化
+  if (saved) {
+    const el = document.querySelector('.admin-content')
+    if (el) {
+      await nextTick()
+      el.scrollTo(0, parseInt(saved))
+      await new Promise(r => setTimeout(r, 100))
+      el.scrollTo(0, parseInt(saved))
+    }
+    sessionStorage.removeItem('dashboardScrollY')
   }
 })
 
@@ -442,6 +473,12 @@ async function openTagCelebrities(t) {
   color: #303133;
   white-space: nowrap;
 }
+
+.hot-en-name {
+  font-size: 14px;
+  color: #BABCBF;
+}
+
 .hot-count {
   margin-left: auto;
   font-size: 12px;

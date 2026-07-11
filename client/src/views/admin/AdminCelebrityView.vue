@@ -1,7 +1,7 @@
 <template>
   <div class="admin-view">
     <div class="detail-header">
-      <button class="back-arrow" @click="$router.push('/admin/dashboard')">&lt;</button>
+      <button class="back-arrow" @click="goBack">&lt;</button>
       <h2 class="detail-title" v-if="celebrity"><span class="title-name">{{ celebrity.chinese_name || celebrity.name }}</span> 信息详情</h2>
       <h2 class="detail-title" v-else>信息详情</h2>
     </div>
@@ -21,7 +21,7 @@
             <div class="info-list">
               <div class="info-row"><span class="info-label">英文名</span><span class="info-value">{{ celebrity.name }}</span></div>
               <div class="info-row" v-if="celebrity.chinese_name"><span class="info-label">中文名</span><span class="info-value">{{ celebrity.chinese_name }}</span></div>
-              <div class="info-row"><span class="info-label">国籍</span><span class="info-value">{{ celebrity.nationality }}</span></div>
+              <div class="info-row"><span class="info-label">{{ celebrity.nationality?.includes('中国_') ? '朝代' : '国籍' }}</span><span class="info-value">{{ celebrity.nationality?.includes('中国_') ? celebrity.nationality.replace('中国_', '') : celebrity.nationality }}</span></div>
               <div class="info-row"><span class="info-label">职业</span><span class="info-value">{{ celebrity.occupation }}</span></div>
               <div class="info-row"><span class="info-label">出生</span><span class="info-value">{{ celebrity.birth_date || '未知' }}</span></div>
               <div class="info-row"><span class="info-label">逝世</span><span class="info-value">{{ celebrity.death_date || '未知' }}</span></div>
@@ -97,6 +97,11 @@ const md = new MarkdownIt({ html: true, linkify: true })
 
 const route = useRoute()
 const router = useRouter()
+
+function goBack() {
+  router.push('/admin/dashboard')
+}
+
 const celebrity = ref(null)
 const relationsList = ref([])
 const timeline = ref([])

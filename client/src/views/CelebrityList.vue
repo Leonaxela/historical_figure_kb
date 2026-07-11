@@ -7,7 +7,7 @@
     <el-card shadow="never" class="filter-card">
       <el-row :gutter="16" align="middle">
         <el-col :span="8">
-          <el-input v-model="store.search" placeholder="搜索姓名、中文名、简介..." clearable
+          <el-input v-model="store.search" placeholder="搜索中文名、英文名..." clearable
             @input="debounceSearch" @clear="store.setSearch('')">
             <template #prefix><el-icon><Search /></el-icon></template>
           </el-input>
@@ -19,7 +19,7 @@
           </el-select>
         </el-col>
         <el-col :span="5">
-          <el-select v-model="store.occupation" placeholder="职业" clearable
+          <el-select v-model="store.occupation" placeholder="职业" clearable filterable
             @change="store.setFilter('occupation', $event || '')" style="width:100%">
             <el-option v-for="o in store.occupations" :key="o" :label="o" :value="o" />
           </el-select>

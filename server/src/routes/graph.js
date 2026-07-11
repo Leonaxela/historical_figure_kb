@@ -5,9 +5,11 @@ const router = Router();
 
 // GET /api/graph — 图谱数据
 router.get('/', (req, res) => {
-  const { centerId, depth = 1, category, limit = 200 } = req.query;
+  const { centerId, centerIds, depth = 1, category, limit = 200 } = req.query;
+  // 兼容两种传参：centerIds（多选逗号分隔）和 centerId（单个，管理后台使用）
+  const ids = centerIds || centerId;
   const data = getGraphData({
-    centerId: centerId ? Number(centerId) : undefined,
+    centerIds: ids ? ids.split(',').map(Number) : undefined,
     depth: Number(depth),
     category,
     limit: Number(limit),

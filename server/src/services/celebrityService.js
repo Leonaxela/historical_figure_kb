@@ -101,13 +101,20 @@ export function getCelebrity(id, includeHidden = false) {
   return { ...celebrity, relations };
 }
 
+// 朝代名称 → 英文ID 映射（与前端 DYNASTY_LABELS 反向）
+const DYNASTY_MAP = {
+  '春秋': 'chunqiu', '战国': 'zhanguo', '秦': 'qin', '西汉': 'xihan', '东汉': 'donghan',
+  '三国': 'sanguo', '西晋': 'xijin', '东晋': 'dongjin', '南北朝': 'nanbei', '隋': 'sui',
+  '唐': 'tang', '北宋': 'beisong', '南宋': 'nansong', '元': 'yuan', '明': 'ming', '清': 'qing',
+}
+
 /**
  * 创建名人
  */
 export function createCelebrity(data) {
   const db = getDb();
   const { name, chinese_name, his_id, birth_date, death_date, nationality, occupation, biography, image_url, wiki_id } = data;
-  const finalHisId = his_id || generateHisId();
+  const finalHisId = his_id || generateHisId(nationality);
   db.run(
     `INSERT INTO celebrities (name, chinese_name, his_id, birth_date, death_date, nationality, occupation, biography, image_url, wiki_id)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
@@ -117,9 +124,19 @@ export function createCelebrity(data) {
   return db.exec('SELECT last_insert_rowid() as id')[0].values[0][0];
 }
 
-function generateHisId() {
-  const rand = String(Math.floor(100000 + Math.random() * 900000));
-  return `F_${rand}`;
+function generateHisId(nationality) {
+  // 中国人物：从 "中国_唐" 中提取朝代，生成 tang_6位随机数
+  if (nationality && nationality.startsWith('中国_')) {
+    const dynastyLabel = nationality.replace('中国_', '')
+    const prefix = DYNASTY_MAP[dynastyLabel]
+    if (prefix) {
+      const rand = String(Math.floor(100000 + Math.random() * 900000))
+      return `${prefix}_${rand}`
+    }
+  }
+  // 非中国人物：F_6位随机数
+  const rand = String(Math.floor(100000 + Math.random() * 900000))
+  return `F_${rand}`
 }
 
 /**
@@ -172,8 +189,15 @@ export function getNationalities() {
  */
 export function getOccupations() {
   const db = getDb();
-  const result = db.exec('SELECT DISTINCT occupation FROM celebrities WHERE occupation IS NOT NULL AND occupation != "" AND status IS NOT 0 ORDER BY occupation');
-  return (result[0]?.values ?? []).map(v => v[0]);
+  const result = db.exec('SELECT occupation FROM celebrities WHERE occupation IS NOT NULL AND occupation != "" AND status IS NOT 0');
+  const set = new Set();
+  for (const row of (result[0]?.values ?? [])) {
+    for (const part of (row[0] ?? '').split('、')) {
+      const trimmed = part.trim();
+      if (trimmed) set.add(trimmed);
+    }
+  }
+  return [...set].sort();
 }
 
 /**

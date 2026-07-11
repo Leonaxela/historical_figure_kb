@@ -24,8 +24,11 @@ router.post('/', authMiddleware, (req, res) => {
   if (!source_id || !target_id || !type_id) {
     return res.status(400).json({ success: false, message: 'source_id, target_id, type_id 为必填项' });
   }
-  const id = createRelationship({ source_id, target_id, type_id, description, start_date, end_date });
-  res.status(201).json({ success: true, data: { id } });
+  const result = createRelationship({ source_id, target_id, type_id, description, start_date, end_date });
+  if (result.error) {
+    return res.status(409).json({ success: false, message: result.error });
+  }
+  res.status(201).json({ success: true, data: { id: result.id } });
 });
 
 router.delete('/:id', authMiddleware, (req, res) => {

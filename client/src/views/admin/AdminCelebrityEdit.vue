@@ -79,7 +79,7 @@
                 </div>
                 <div class="rel-actions">
                   <el-button size="small" @click="openRelEdit(r)">修改</el-button>
-                  <el-popconfirm title="确定删除此关系？" @confirm="deleteRel(r)">
+                  <el-popconfirm title="确定删除此关系？" :width="160" @confirm="deleteRel(r)">
                     <template #reference><el-button size="small" type="danger">删除</el-button></template>
                   </el-popconfirm>
                 </div>
@@ -359,7 +359,7 @@ async function saveRel() {
     }
     relDialog.value = false
     load()
-  } catch { ElMessage.error('操作失败') }
+  } catch (e) { ElMessage.error(e?.response?.data?.message || '操作失败') }
   finally { relSaving.value = false }
 }
 async function deleteRel(r) {

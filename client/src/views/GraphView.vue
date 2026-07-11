@@ -6,7 +6,7 @@
         <el-select v-model="categoryFilter" placeholder="关系类别" clearable style="width:130px" @change="loadGraph">
           <el-option v-for="c in categories" :key="c" :label="c" :value="c" />
         </el-select>
-        <el-select v-model="centerId" placeholder="中心人物" filterable clearable style="width:160px" @change="loadGraph">
+        <el-select v-model="centerIds" placeholder="中心人物" filterable clearable multiple collapse-tags :multiple-limit="3" style="width:260px" @change="loadGraph">
           <el-option v-for="c in allCelebrities" :key="c.id" :label="c.chinese_name || c.name" :value="c.id" />
         </el-select>
         <el-select v-model="depth" style="width:130px" @change="loadGraph">
@@ -141,7 +141,7 @@ const detailNode = ref(null)
 const typeFilter = ref(route.query.type || '')
 const categoryFilter = ref('')
 const categories = computed(() => [...new Set(relationTypes.value.map(t => t.category).filter(Boolean))])
-const centerId = ref(route.query.centerId ? Number(route.query.centerId) : null)
+const centerIds = ref(route.query.centerIds ? route.query.centerIds.split(',').map(Number) : [])
 const depth = ref(Number(route.query.depth) || 1)
 
 const nodeColors = ['#409eff', '#67c23a', '#f56c6c', '#909399', '#e6a23c', '#8b5cf6', '#10b981']
@@ -218,7 +218,7 @@ async function loadGraph() {
   loading.value = true
   try {
     const res = await graphApi.get({
-      centerId: centerId.value || undefined,
+      centerIds: centerIds.value.length > 0 ? centerIds.value.join(',') : undefined,
       depth: depth.value,
       category: categoryFilter.value || undefined,
     })

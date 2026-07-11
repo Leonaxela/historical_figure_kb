@@ -3,16 +3,16 @@ import { getDb } from '../database/init.js';
 /**
  * 获取完整关系图谱数据（所有节点和边）
  * @param {Object} options
- * @param {number} options.centerId - 中心节点 ID，围绕该节点展开
+ * @param {number[]} options.centerIds - 中心节点 ID 数组，围绕这些节点展开（最多3个）
  * @param {number} options.depth - 展开深度（1 = 仅直接关系，2 = 关系的关系）
  * @param {string} options.category - 关系分类筛选
  * @param {number} options.limit - 最大节点数
  */
-export function getGraphData({ centerId, depth = 1, category, limit = 200 } = {}) {
+export function getGraphData({ centerIds, depth = 1, category, limit = 200 } = {}) {
   const db = getDb();
 
-  if (centerId) {
-    return getEgoGraph(Number(centerId), Number(depth), category, Number(limit));
+  if (centerIds && centerIds.length > 0) {
+    return getEgoGraph(centerIds, Number(depth), category, Number(limit));
   }
   return getFullGraph(category, Number(limit));
 }
@@ -67,28 +67,29 @@ function getFullGraph(category, limit) {
 }
 
 /**
- * 自我中心图（围绕一个名人展开）
+ * 自我中心图（围绕一个或多个名人展开）
  */
-function getEgoGraph(centerId, depth, category, limit) {
+function getEgoGraph(centerIds, depth, category, limit) {
+  const ids = Array.isArray(centerIds) ? centerIds : [centerIds];
   const db = getDb();
 
   const extraParams = category ? [category] : [];
 
-  // 查询中心节点
-  const centerStmt = db.prepare('SELECT id, name, chinese_name, nationality, occupation, image_url, biography FROM celebrities WHERE id = ?');
-  centerStmt.bind([centerId]);
-  let centerNode = null;
-  if (centerStmt.step()) {
-    centerNode = centerStmt.getAsObject();
+  // 查询所有中心节点
+  const placeholders = ids.map(() => '?').join(',');
+  const centerStmt = db.prepare(`SELECT id, name, chinese_name, nationality, occupation, image_url, biography FROM celebrities WHERE id IN (${placeholders})`);
+  centerStmt.bind(ids);
+  const nodes = [];
+  while (centerStmt.step()) {
+    nodes.push(centerStmt.getAsObject());
   }
   centerStmt.free();
-  if (!centerNode) return { nodes: [], edges: [] };
+  if (nodes.length === 0) return { nodes: [], edges: [] };
 
-  const visited = new Set([centerId]);
-  const nodes = [centerNode];
+  const visited = new Set(ids);
   const edges = [];
   const edgeSet = new Set();
-  let currentLevel = [centerId];
+  let currentLevel = ids;
 
   for (let d = 0; d < depth && currentLevel.length > 0 && nodes.length < limit; d++) {
     const nextLevel = [];

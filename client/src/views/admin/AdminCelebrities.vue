@@ -17,7 +17,7 @@
           <tr>
             <th>中文名</th>
             <th>英文名</th>
-            <th>国籍</th>
+            <th>朝代/国籍</th>
             <th>职业</th>
             <th>生卒</th>
             <th class="col-center">状态</th>
@@ -29,7 +29,7 @@
           <tr v-for="row in list" :key="row.id" @click="goEdit(row)">
             <td class="td-clip">{{ row.chinese_name }}</td>
             <td class="td-clip">{{ row.name }}</td>
-            <td class="td-clip">{{ row.nationality }}</td>
+            <td class="td-clip">{{ row.nationality?.replace('中国_', '') || row.nationality }}</td>
             <td>{{ row.occupation }}</td>
             <td>{{ row.birth_date || '?' }} ~ {{ row.death_date || '?' }}</td>
             <td class="col-center"><span class="status-dot" :class="row.status === 0 ? 'off' : 'on'"></span></td>
@@ -86,10 +86,10 @@
           </el-col>
         </el-row>
         <el-form-item label="国籍">
-          <el-input v-model="form.nationality" placeholder="中国人物：中国_春秋。非中国：古希腊" />
+          <el-input v-model="form.nationality" placeholder='输入 中国 时可选朝代' />
         </el-form-item>
-        <el-form-item label="朝代" v-if="form.nationality?.includes('中国')">
-          <el-select v-model="form.displayDynasty" placeholder="选择朝代" clearable style="width:100%" @change="onDynastyChange">
+        <el-form-item label="朝代" v-if="form.nationality === '中国'">
+          <el-select v-model="form.displayDynasty" placeholder="选择朝代" clearable style="width:100%">
             <el-option v-for="d in dynasties" :key="d.id" :label="d.label" :value="d.id" />
           </el-select>
         </el-form-item>
@@ -138,7 +138,6 @@ const form = ref({
   nationality: '', occupation: '', biography: '',
 })
 
-const displayDynasty = ref('')
 const chineseNameStatus = ref({ msg: '', color: '' })
 let nameCheckTimer = null
 
@@ -154,22 +153,13 @@ function onChineseNameInput(val) {
   }, 500)
 }
 
-function onDynastyChange(val) {
-  if (val && DYNASTY_LABELS[val]) {
-    form.value.nationality = '中国_' + DYNASTY_LABELS[val]
-  } else {
-    form.value.nationality = '中国'
-  }
-}
-
 const rules = {
   name: [{ required: true, message: '英文名为必填项', trigger: 'blur' }],
   chinese_name: [{ required: true, message: '中文名为必填项', trigger: 'blur' }],
 }
 
 function resetForm() {
-  form.value = { name: '', chinese_name: '', birth_date: '', death_date: '', nationality: '', occupation: '', biography: '' }
-  displayDynasty.value = ''
+  form.value = { name: '', chinese_name: '', birth_date: '', death_date: '', nationality: '', occupation: '', biography: '', displayDynasty: '' }
 }
 
 async function handleCreate() {
@@ -177,7 +167,13 @@ async function handleCreate() {
   if (!valid) return
   creating.value = true
   try {
-    await celebrityApi.create(form.value)
+    // 构造提交数据，不直接修改 form（避免影响输入框显示）
+    const payload = { ...form.value }
+    if (payload.nationality === '中国' && payload.displayDynasty && DYNASTY_LABELS[payload.displayDynasty]) {
+      payload.nationality = '中国_' + DYNASTY_LABELS[payload.displayDynasty]
+    }
+    delete payload.displayDynasty
+    await celebrityApi.create(payload)
     ElMessage.success('创建成功')
     showCreate.value = false
     resetForm()
