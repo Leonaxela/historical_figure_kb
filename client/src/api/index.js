@@ -48,4 +48,16 @@ export const healthApi = {
   check() { return api.get('/health').then(r => r.data) },
 }
 
+// 名人称谓
+export const tagApi = {
+  list() { return api.get('/tags').then(r => r.data) },
+  create(data) { return api.post('/tags', data).then(r => r.data) },
+  update(id, data) { return api.put(`/tags/${id}`, data).then(r => r.data) },
+  remove(id) { return api.delete(`/tags/${id}`).then(r => r.data) },
+  celebrities(tagId) { return api.get(`/tags/${tagId}/celebrities`).then(r => r.data) },
+  sort(tagId, celebrity_ids) { return api.post('/tags/sort', { tag_id: tagId, celebrity_ids }).then(r => r.data) },
+  attach(celebrity_id, tag_id) { return api.post('/tags/attach', { celebrity_id, tag_id }).then(r => r.data) },
+  detach(celebrity_id, tag_id) { return api.post('/tags/detach', { celebrity_id, tag_id }).then(r => r.data) },
+}
+
 export default api

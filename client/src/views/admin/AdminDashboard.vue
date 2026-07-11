@@ -54,11 +54,42 @@
 
     <!-- 词云 -->
     <div class="section">
-      <h3 class="section-title">☁️ 名人词云</h3>
+      <h3 class="section-title" >☁️ 名人词云</h3>
       <div class="chart-card">
         <WordCloud3D :data="wordcloudData" :on-label-click="goCelebrity" />
       </div>
     </div>
+
+    <!-- 名人称谓 -->
+    <div class="section">
+      <h3 class="section-title" >🏷️ 名人称谓</h3>
+      <div class="tag-grid" v-if="tags.length">
+        <div class="tag-card" v-for="t in tags" :key="t.id" :style="{ borderLeft: '3px solid ' + (t.color || '#409eff') }" @click="openTagCelebrities(t)">
+          <div class="tag-badge" :style="{ background: t.color || '#409eff' }">{{ t.count }}</div>
+          <div class="tag-name">{{ t.name }}</div>
+          <div class="tag-desc">{{ t.description || '' }}</div>
+        </div>
+      </div>
+      <el-empty v-else description="暂无称谓" :image-size="40" />
+    </div>
+
+    <!-- 称谓名人弹窗 -->
+    <el-dialog v-model="tagDialog" :title="tagDialogTitle" width="500px">
+      <div v-if="tagCelebrities.length" class="tag-celeb-list">
+        <div class="tag-celeb-item" v-for="c in tagCelebrities" :key="c.id" @click="goCelebrity(c.id)">
+          <div class="tag-celeb-avatar" :style="{ background: c.image_url ? 'transparent' : 'linear-gradient(135deg, #409eff, #6366f1)' }">
+            <img v-if="c.image_url" :src="'/img/' + c.image_url" class="tag-celeb-img" />
+            <span v-else>{{ (c.chinese_name || c.name).charAt(0) }}</span>
+          </div>
+          <div class="tag-celeb-info">
+            <span class="tag-celeb-name">{{ c.chinese_name || c.name }}</span>
+            <span class="tag-celeb-meta">{{ c.nationality?.replace('中国_', '') || c.nationality }} · {{ c.occupation }}</span>
+          </div>
+          <span class="tag-celeb-dates">{{ c.birth_date || '?' }} ~ {{ c.death_date || '?' }}</span>
+        </div>
+      </div>
+      <el-empty v-else description="暂无关联名人" :image-size="40" />
+    </el-dialog>
 
     <!-- 饼图区域 -->
     <div class="section">
@@ -117,7 +148,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { graphApi, celebrityApi } from '../../api/index.js'
+import { graphApi, celebrityApi, tagApi } from '../../api/index.js'
 import { User, Setting, View, Share, Collection } from '@element-plus/icons-vue'
 import WordCloud3D from '../../components/WordCloud3D.vue'
 import VChart from 'vue-echarts'
@@ -134,6 +165,10 @@ const statsData = ref({ celebrityCount: 0, relationshipCount: 0, typeCount: 0 })
 const nationalityDist = ref([])
 const topConnected = ref([])
 const wordcloudData = ref([])
+const tags = ref([])
+const tagDialog = ref(false)
+const tagDialogTitle = ref('')
+const tagCelebrities = ref([])
 
 const router = useRouter()
 function goCelebrity(id) {
@@ -249,6 +284,8 @@ onMounted(async () => {
     topConnected.value = data.topConnected || []
     const wcRes = await graphApi.wordcloud()
     wordcloudData.value = wcRes.data || []
+    const tagRes = await tagApi.list()
+    tags.value = tagRes.data || []
     const all = listRes.data || []
     recentCelebrities.value = all.slice(0, 8)
   } catch (e) {
@@ -257,6 +294,13 @@ onMounted(async () => {
     tableLoading.value = false
   }
 })
+
+async function openTagCelebrities(t) {
+  tagDialogTitle.value = t.name
+  const res = await tagApi.celebrities(t.id)
+  tagCelebrities.value = res.data || []
+  tagDialog.value = true
+}
 </script>
 
 <style scoped>
@@ -510,4 +554,20 @@ onMounted(async () => {
 }
 @keyframes lspin { to { transform: rotate(360deg); } }
 
+/* --- 称谓卡片 --- */
+.tag-grid { display: flex; flex-wrap: wrap; gap: 12px; }
+.tag-card { display: flex; flex-direction: column; gap: 4px; padding: 14px 18px; background: #fff; border-radius: 10px; border: 1px solid #e4e7ed; cursor: pointer; transition: all 0.15s; min-width: 140px; position: relative; }
+.tag-card:hover { border-color: #409eff; box-shadow: 0 2px 8px rgba(64,158,255,0.08); transform: translateY(-1px); }
+.tag-badge { position: absolute; top: -6px; right: -6px; min-width: 20px; height: 20px; line-height: 20px; text-align: center; font-size: 11px; font-weight: 700; color: #fff; border-radius: 10px; padding: 0 6px; }
+.tag-name { font-size: 14px; font-weight: 600; color: #303133; }
+.tag-desc { font-size: 12px; color: #909399; }
+.tag-celeb-list { display: flex; flex-direction: column; gap: 8px; }
+.tag-celeb-item { display: flex; align-items: center; gap: 12px; padding: 10px 14px; border-radius: 8px; background: #f5f7fa; cursor: pointer; transition: background 0.15s; }
+.tag-celeb-item:hover { background: #ecf5ff; }
+.tag-celeb-avatar { width: 36px; height: 36px; line-height: 36px; border-radius: 50%; color: #fff; font-size: 14px; font-weight: 700; text-align: center; flex-shrink: 0; overflow: hidden; }
+.tag-celeb-img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.tag-celeb-info { display: flex; flex-direction: column; gap: 2px; }
+.tag-celeb-name { font-size: 14px; font-weight: 500; color: #303133; }
+.tag-celeb-meta { font-size: 12px; color: #909399; }
+.tag-celeb-dates { margin-left: auto; font-size: 12px; color: #909399; white-space: nowrap; }
 </style>

@@ -12,7 +12,7 @@
 
     <!-- 表格 -->
     <div class="table-wrap">
-      <table class="native-table">
+      <table class="native-table celebrities-table">
         <thead>
           <tr>
             <th>中文名</th>
@@ -21,15 +21,15 @@
             <th>职业</th>
             <th>生卒</th>
             <th class="col-center">状态</th>
-            <th class="col-center">关联</th>
+            <th class="col-center">关系</th>
             <th class="col-actions">操作</th>
           </tr>
         </thead>
         <tbody>
           <tr v-for="row in list" :key="row.id" @click="goEdit(row)">
-            <td>{{ row.chinese_name }}</td>
-            <td>{{ row.name }}</td>
-            <td>{{ row.nationality }}</td>
+            <td class="td-clip">{{ row.chinese_name }}</td>
+            <td class="td-clip">{{ row.name }}</td>
+            <td class="td-clip">{{ row.nationality }}</td>
             <td>{{ row.occupation }}</td>
             <td>{{ row.birth_date || '?' }} ~ {{ row.death_date || '?' }}</td>
             <td class="col-center"><span class="status-dot" :class="row.status === 0 ? 'off' : 'on'"></span></td>
@@ -70,7 +70,8 @@
           <el-input v-model="form.name" />
         </el-form-item>
         <el-form-item label="中文名" prop="chinese_name">
-          <el-input v-model="form.chinese_name" />
+          <el-input v-model="form.chinese_name" @input="onChineseNameInput" />
+          <span v-if="chineseNameStatus.msg" :style="{ color: chineseNameStatus.color, fontSize: '12px', lineHeight: '1.4' }">{{ chineseNameStatus.msg }}</span>
         </el-form-item>
         <el-row :gutter="12">
           <el-col :span="12">
@@ -138,6 +139,20 @@ const form = ref({
 })
 
 const displayDynasty = ref('')
+const chineseNameStatus = ref({ msg: '', color: '' })
+let nameCheckTimer = null
+
+function onChineseNameInput(val) {
+  clearTimeout(nameCheckTimer)
+  if (!val) { chineseNameStatus.value = { msg: '', color: '' }; return }
+  nameCheckTimer = setTimeout(async () => {
+    const res = await celebrityApi.list({ search: val, pageSize: 10 })
+    const found = (res.data || []).some(c => c.chinese_name === val)
+    chineseNameStatus.value = found
+      ? { msg: '该名人名字已存在', color: '#f56c6c' }
+      : { msg: '', color: '' }
+  }, 500)
+}
 
 function onDynastyChange(val) {
   if (val && DYNASTY_LABELS[val]) {
@@ -277,6 +292,7 @@ onMounted(() => loadList())
 .table-wrap { position: relative; }
 .native-table {
   width: 100%;
+  table-layout: fixed;
   border-collapse: collapse;
   background: #fff;
   border-radius: 12px;
@@ -324,6 +340,15 @@ onMounted(() => loadList())
 }
 .table-btn:hover { background: #ecf5ff; }
 .table-btn.danger { color: #f56c6c; }
+.td-clip { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.native-table.celebrities-table th:nth-child(1) { width: 10%; }
+.native-table.celebrities-table th:nth-child(2) { width: 10%; }
+.native-table.celebrities-table th:nth-child(3) { width: 10%; }
+.native-table.celebrities-table th:nth-child(4) { width: 25%; }
+.native-table.celebrities-table th:nth-child(5) { width: 20%; }
+.native-table.celebrities-table th:nth-child(6) { width: 5%; }
+.native-table.celebrities-table th:nth-child(7) { width: 5%; }
+.native-table.celebrities-table th:nth-child(8) { width: 15%; }
 
 .status-dot {
   display: inline-block;

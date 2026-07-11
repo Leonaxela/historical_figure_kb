@@ -9,6 +9,7 @@ import celebritiesRouter from './routes/celebrities.js';
 import relationshipsRouter from './routes/relationships.js';
 import graphRouter from './routes/graph.js';
 import uploadRouter from './routes/upload.js';
+import tagsRouter from './routes/tags.js';
 import authRouter, { authMiddleware } from './routes/auth.js';
 
 const app = express();
@@ -25,6 +26,7 @@ app.use('/api/celebrities', celebritiesRouter);
 app.use('/api/upload', uploadRouter);
 app.use('/api/relationships', relationshipsRouter);
 app.use('/api/graph', graphRouter);
+app.use('/api/tags', tagsRouter);
 app.use('/api', authRouter);
 
 // 健康检查
@@ -46,12 +48,12 @@ async function start() {
 
   app.listen(PORT, () => {
     console.log('');
-    console.log(' ╔══════════════════════════════════╗');
-    console.log(' ║      🌏 名人关系图谱服务         ║');
-    console.log(' ╠══════════════════════════════════╣');
-    console.log(` ║  🚀 服务已启动: http://localhost:${PORT}`);
-    console.log(` ║  📊 名人 ${celebCnt} 位 | 关系 ${relCnt} 条`);
-    console.log(' ╚══════════════════════════════════╝');
+    console.log(' ╔═══════════════════════════════════════╗');
+    console.log(' ║      🌏 名人关系图谱服务              ║');
+    console.log(' ╠═══════════════════════════════════════╣');
+    console.log(` ║  🚀 服务已启动: http://localhost:${PORT} ║`);
+    console.log(` ║  📊 名人 ${celebCnt} 位 | 关系 ${relCnt} 条          ║`);
+    console.log(' ╚═══════════════════════════════════════╝');
     console.log('');
   });
 }
