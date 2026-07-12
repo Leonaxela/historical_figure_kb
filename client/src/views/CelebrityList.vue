@@ -13,9 +13,15 @@
           </el-input>
         </el-col>
         <el-col :span="5">
-          <el-select v-model="store.nationality" placeholder="国籍" clearable
+          <el-select v-model="store.tagId" placeholder="称谓" clearable filterable
+            @change="store.setFilter('tagId', $event || '')" style="width:100%">
+            <el-option v-for="t in store.tags" :key="t.id" :label="t.name" :value="t.id" />
+          </el-select>
+        </el-col>
+        <el-col :span="5">
+          <el-select v-model="store.nationality" placeholder="国籍/朝代" clearable filterable
             @change="store.setFilter('nationality', $event || '')" style="width:100%">
-            <el-option v-for="n in store.nationalities" :key="n" :label="n" :value="n" />
+            <el-option v-for="n in store.nationalities" :key="n" :label="n.replace('中国_', '')" :value="n" />
           </el-select>
         </el-col>
         <el-col :span="5">

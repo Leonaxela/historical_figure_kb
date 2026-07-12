@@ -4,6 +4,15 @@
     <div class="toolbar">
       <el-button type="primary" :icon="Plus" @click="showCreate = true">新增名人</el-button>
       <div class="toolbar-right">
+        <el-select v-model="filterTag" placeholder="称谓" clearable filterable style="width:150px" @change="onFilterChange">
+          <el-option v-for="t in tags" :key="t.id" :label="t.name" :value="t.id" />
+        </el-select>
+        <el-select v-model="filterNationality" placeholder="国籍/朝代" clearable filterable style="width:160px" @change="onFilterChange">
+          <el-option v-for="n in nationalities" :key="n" :label="n.replace('中国_', '')" :value="n" />
+        </el-select>
+        <el-select v-model="filterOccupation" placeholder="职业" clearable filterable style="width:150px" @change="onFilterChange">
+          <el-option v-for="o in occupations" :key="o" :label="o" :value="o" />
+        </el-select>
         <el-input v-model="searchText" placeholder="搜索..." clearable style="width:220px" @input="debounceSearch">
           <template #prefix><el-icon><Search /></el-icon></template>
         </el-input>
@@ -15,6 +24,7 @@
       <table class="native-table celebrities-table">
         <thead>
           <tr>
+            <th style="width:40px;text-align:center"></th>
             <th>中文名</th>
             <th>英文名</th>
             <th>朝代/国籍</th>
@@ -26,7 +36,8 @@
           </tr>
         </thead>
         <tbody>
-          <tr v-for="row in list" :key="row.id" @click="goEdit(row)">
+          <tr v-for="(row, i) in list" :key="row.id" @click="goEdit(row)">
+            <td style="text-align:center;color:#909399">{{ (page - 1) * pageSize + i + 1 }}</td>
             <td class="td-clip">{{ row.chinese_name }}</td>
             <td class="td-clip">{{ row.name }}</td>
             <td class="td-clip">{{ row.nationality?.replace('中国_', '') || row.nationality }}</td>
@@ -111,7 +122,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { celebrityApi } from '../../api/index.js'
+import { celebrityApi, tagApi } from '../../api/index.js'
 import { Search, Plus } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 
@@ -121,6 +132,12 @@ const total = ref(0)
 const page = ref(1)
 const pageSize = ref(20)
 const searchText = ref('')
+const filterTag = ref('')
+const filterNationality = ref('')
+const filterOccupation = ref('')
+const nationalities = ref([])
+const occupations = ref([])
+const tags = ref([])
 const loading = ref(false)
 const creating = ref(false)
 const showCreate = ref(false)
@@ -197,6 +214,7 @@ async function handleDelete(row) {
 }
 
 function goEdit(row) {
+  saveFilters()
   router.push('/admin/celebrities/' + row.id)
 }
 
@@ -211,13 +229,40 @@ async function handleToggleStatus(row) {
   }
 }
 
+function saveFilters() {
+  sessionStorage.setItem('adminCelebFilters', JSON.stringify({
+    search: searchText.value,
+    nationality: filterNationality.value,
+    occupation: filterOccupation.value,
+    tagId: filterTag.value,
+  }))
+}
+function restoreFilters() {
+  try {
+    const raw = sessionStorage.getItem('adminCelebFilters')
+    if (!raw) return
+    const f = JSON.parse(raw)
+    searchText.value = f.search || ''
+    filterNationality.value = f.nationality || ''
+    filterOccupation.value = f.occupation || ''
+    filterTag.value = f.tagId || ''
+    sessionStorage.removeItem('adminCelebFilters')
+  } catch {}
+}
+
 let debounceTimer = null
 function debounceSearch() {
   clearTimeout(debounceTimer)
   debounceTimer = setTimeout(() => {
     page.value = 1
+    saveFilters()
     loadList()
   }, 400)
+}
+function onFilterChange() {
+  page.value = 1
+  saveFilters()
+  loadList()
 }
 
 async function loadList() {
@@ -227,6 +272,9 @@ async function loadList() {
       page: page.value,
       pageSize: pageSize.value,
       search: searchText.value || undefined,
+      nationality: filterNationality.value || undefined,
+      occupation: filterOccupation.value || undefined,
+      tagId: filterTag.value || undefined,
       includeHidden: true,
     })
     list.value = res.data || []
@@ -238,7 +286,13 @@ async function loadList() {
   }
 }
 
-onMounted(() => loadList())
+onMounted(() => {
+  restoreFilters()
+  loadList()
+  celebrityApi.nationalities().then(r => { nationalities.value = r.data || [] })
+  celebrityApi.occupations().then(r => { occupations.value = r.data || [] })
+  tagApi.list().then(r => { tags.value = r.data || [] })
+})
 </script>
 
 <style scoped>
@@ -251,6 +305,11 @@ onMounted(() => loadList())
   margin-bottom: 18px;
 }
 
+.toolbar-right {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
 .toolbar-right :deep(.el-input__wrapper) {
   background: #fff;
   border-radius: 8px;
@@ -337,14 +396,15 @@ onMounted(() => loadList())
 .table-btn:hover { background: #ecf5ff; }
 .table-btn.danger { color: #f56c6c; }
 .td-clip { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.native-table.celebrities-table th:nth-child(1) { width: 10%; }
-.native-table.celebrities-table th:nth-child(2) { width: 10%; }
-.native-table.celebrities-table th:nth-child(3) { width: 10%; }
-.native-table.celebrities-table th:nth-child(4) { width: 25%; }
-.native-table.celebrities-table th:nth-child(5) { width: 20%; }
-.native-table.celebrities-table th:nth-child(6) { width: 5%; }
-.native-table.celebrities-table th:nth-child(7) { width: 5%; }
-.native-table.celebrities-table th:nth-child(8) { width: 15%; }
+.native-table.celebrities-table th:nth-child(1) { width: 2%; } /* 序号 */
+.native-table.celebrities-table th:nth-child(2) { width: 10%; } /* 中文名 */
+.native-table.celebrities-table th:nth-child(3) { width: 10%; } /* 英文名 */
+.native-table.celebrities-table th:nth-child(4) { width: 10%; } /* 国籍、朝代*/
+.native-table.celebrities-table th:nth-child(5) { width: 22%; } /* 职业 */
+.native-table.celebrities-table th:nth-child(6) { width: 23%; } /* 生卒年 */
+.native-table.celebrities-table th:nth-child(7) { width: 4%; } /* 状态 */
+.native-table.celebrities-table th:nth-child(8) { width: 4%; } /* 关系 */
+.native-table.celebrities-table th:nth-child(9) { width: 15%; } /* 操作 */
 
 .status-dot {
   display: inline-block;

@@ -3,7 +3,7 @@ import { getDb, saveDb } from '../database/init.js';
 /**
  * 查询名人列表（分页 + 搜索 + 筛选）
  */
-export function listCelebrities({ page = 1, pageSize = 20, search, nationality, occupation, includeHidden = false } = {}) {
+export function listCelebrities({ page = 1, pageSize = 20, search, nationality, occupation, tagId, includeHidden = false } = {}) {
   const db = getDb();
   const conditions = [];
   const params = [];
@@ -18,12 +18,16 @@ export function listCelebrities({ page = 1, pageSize = 20, search, nationality, 
     params.push(s, s);
   }
   if (nationality) {
-    conditions.push('c.nationality = ?');
-    params.push(nationality);
+    conditions.push('c.nationality LIKE ?');
+    params.push(`%${nationality}%`);
   }
   if (occupation) {
     conditions.push('c.occupation LIKE ?');
     params.push(`%${occupation}%`);
+  }
+  if (tagId) {
+    conditions.push('c.id IN (SELECT celebrity_id FROM celebrity_tags WHERE tag_id = ?)');
+    params.push(tagId);
   }
 
   const where = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
@@ -180,7 +184,7 @@ export function deleteCelebrity(id) {
  */
 export function getNationalities() {
   const db = getDb();
-  const result = db.exec('SELECT DISTINCT nationality FROM celebrities WHERE nationality IS NOT NULL AND nationality != "" AND status IS NOT 0 ORDER BY nationality');
+  const result = db.exec('SELECT DISTINCT nationality FROM celebrities WHERE nationality IS NOT NULL AND nationality != "" AND status IS NOT 0 AND nationality NOT LIKE "%/%" ORDER BY nationality');
   return (result[0]?.values ?? []).map(v => v[0]);
 }
 

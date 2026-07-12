@@ -13,8 +13,8 @@ const router = Router();
 
 // ── 公开（GET）──
 router.get('/', (req, res) => {
-  const { page = 1, pageSize = 20, search, nationality, occupation } = req.query;
-  const result = listCelebrities({ page: Number(page), pageSize: Number(pageSize), search, nationality, occupation, includeHidden: req.query.includeHidden === 'true' });
+  const { page = 1, pageSize = 20, search, nationality, occupation, tagId } = req.query;
+  const result = listCelebrities({ page: Number(page), pageSize: Number(pageSize), search, nationality, occupation, tagId: tagId ? Number(tagId) : undefined, includeHidden: req.query.includeHidden === 'true' });
   res.json({ success: true, ...result });
 });
 

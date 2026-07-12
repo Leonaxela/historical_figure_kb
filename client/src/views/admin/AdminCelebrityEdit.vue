@@ -375,8 +375,6 @@ const contentSaving = ref(false)
 const previewTab = ref(null)
 const fullscreenTab = ref(null)
 const fsPreview = ref(false)
-const fsToast = ref('')
-const fsToastType = ref('')
 const tabLabels = { biography: '生平', works: '著作', influence: '影响', anecdotes: '轶事' }
 
 const TL_COLORS = { '升迁': '#67c23a', '贬谪': '#f56c6c', '创作': '#e6a23c', '婚丧': '#909399', '其他': '#409eff' }
@@ -389,16 +387,12 @@ function closeFullscreen() { fullscreenTab.value = null; document.body.style.ove
 
 async function saveContents() {
   contentSaving.value = true
-  fsToast.value = ''
   try {
     await contentApi.save(route.params.id, contents.value)
-    fsToast.value = '✅ 内容已保存'
-    fsToastType.value = 'success'
+    ElMessage.success('内容已保存')
   } catch (e) {
-    fsToast.value = '❌ ' + (e.message || '保存失败')
-    fsToastType.value = 'error'
+    ElMessage.error(e?.response?.data?.message || '保存失败')
   } finally { contentSaving.value = false }
-  setTimeout(() => { fsToast.value = '' }, 1500)
 }
 
 // ── 时间线 ──
@@ -753,9 +747,6 @@ onMounted(async () => {
 .fs-title { font-size: 16px; font-weight: 600; color: #303133; }
 .fs-name { color: #d97706; }
 .fs-actions { display: flex; align-items: center; gap: 8px; }
-.fs-toast { font-size: 13px; padding: 2px 10px; border-radius: 4px; }
-.fs-toast.success { color: #67c23a; background: #f0f9eb; }
-.fs-toast.error { color: #f56c6c; background: #fef0f0; }
 .fs-body { flex: 1; padding: 16px 20px; overflow: auto; display: flex; }
 .fs-textarea {
   width: 100%; height: 100%; min-height: 300px;

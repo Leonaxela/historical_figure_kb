@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { celebrityApi, relationApi, graphApi } from '../api/index.js'
+import { celebrityApi, relationApi, graphApi, tagApi } from '../api/index.js'
 
 export const useCelebrityStore = defineStore('celebrities', {
   state: () => ({
@@ -10,10 +10,12 @@ export const useCelebrityStore = defineStore('celebrities', {
     search: '',
     nationality: '',
     occupation: '',
+    tagId: '',
     loading: false,
     current: null,
     nationalities: [],
     occupations: [],
+    tags: [],
     stats: null,
   }),
 
@@ -26,6 +28,7 @@ export const useCelebrityStore = defineStore('celebrities', {
           search: this.search || undefined,
           nationality: this.nationality || undefined,
           occupation: this.occupation || undefined,
+          tagId: this.tagId || undefined,
         })
         this.list = res.data
         this.total = res.total
@@ -41,12 +44,14 @@ export const useCelebrityStore = defineStore('celebrities', {
     },
 
     async fetchFilters() {
-      const [nat, occ] = await Promise.all([
+      const [nat, occ, tagRes] = await Promise.all([
         celebrityApi.nationalities(),
         celebrityApi.occupations(),
+        tagApi.list(),
       ])
       this.nationalities = nat.data || []
       this.occupations = occ.data || []
+      this.tags = tagRes.data || []
     },
 
     async fetchStats() {
