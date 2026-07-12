@@ -72,7 +72,7 @@ const currentRoute = computed(() => {
   // 详情页属于数据看板子界面
   if (path.startsWith('/admin/celebrity-detail') || path.startsWith('/admin/celebrity-view')) return '/admin/dashboard'
   // 编辑页属于名人管理子界面
-  if (route.name === 'admin-celebrity-edit') return '/admin/celebrities'
+  if (route.name === 'admin-celebrity-edit' || route.name === 'admin-celebrity-graph') return '/admin/celebrities'
   return path.startsWith('/admin/') ? path : '/admin/dashboard'
 })
 

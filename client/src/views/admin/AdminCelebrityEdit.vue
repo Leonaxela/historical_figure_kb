@@ -347,6 +347,8 @@ async function openRelEdit(r) {
 async function saveRel() {
   if (!relForm.value.targetId || !relForm.value.typeId)
     return ElMessage.warning('请选择人物和关系')
+  if (Number(relForm.value.targetId) === Number(celebrity.value.id))
+    return ElMessage.warning('不能与自己建立关系')
   relSaving.value = true
   try {
     if (editingRel.value) {

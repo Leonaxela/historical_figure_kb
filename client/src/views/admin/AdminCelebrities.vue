@@ -46,9 +46,12 @@
             <td class="col-center"><span class="status-dot" :class="row.status === 0 ? 'off' : 'on'"></span></td>
             <td class="col-center">{{ row.relation_count ?? 0 }}</td>
             <td class="col-actions">
-              <button class="table-btn" @click.stop="goEdit(row)">编辑</button>
-              <button class="table-btn danger" @click.stop="handleDelete(row)">删除</button>
+              <button class="table-btn graph-btn" title="关系图谱" @click.stop="$router.push('/admin/celebrity-graph/' + row.id)">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="14" height="14"><path fill="currentColor" d="m679.872 348.8-301.76 188.608a127.8 127.8 0 0 1 5.12 52.16l279.936 104.96a128 128 0 1 1-22.464 59.904l-279.872-104.96a128 128 0 1 1-16.64-166.272l301.696-188.608a128 128 0 1 1 33.92 54.272z"/></svg>
+              </button>
+              <button class="table-btn" @click.stop="goEdit(row)">编辑</button>            
               <button class="table-btn" @click.stop="handleToggleStatus(row)">{{ row.status === 0 ? '显示' : '隐藏' }}</button>
+              <button class="table-btn danger" @click.stop="handleDelete(row)">删除</button>
             </td>
           </tr>
           <tr v-if="!loading && list.length === 0">
@@ -395,15 +398,17 @@ onMounted(() => {
 }
 .table-btn:hover { background: #ecf5ff; }
 .table-btn.danger { color: #f56c6c; }
+.graph-btn { display: inline-flex; align-items: center; justify-content: center; padding: 4px 6px; }
+.graph-btn:hover { color: #409eff; }
 .td-clip { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .native-table.celebrities-table th:nth-child(1) { width: 2%; } /* 序号 */
 .native-table.celebrities-table th:nth-child(2) { width: 10%; } /* 中文名 */
 .native-table.celebrities-table th:nth-child(3) { width: 10%; } /* 英文名 */
 .native-table.celebrities-table th:nth-child(4) { width: 10%; } /* 国籍、朝代*/
-.native-table.celebrities-table th:nth-child(5) { width: 22%; } /* 职业 */
-.native-table.celebrities-table th:nth-child(6) { width: 23%; } /* 生卒年 */
-.native-table.celebrities-table th:nth-child(7) { width: 4%; } /* 状态 */
-.native-table.celebrities-table th:nth-child(8) { width: 4%; } /* 关系 */
+.native-table.celebrities-table th:nth-child(5) { width: 18%; } /* 职业 */
+.native-table.celebrities-table th:nth-child(6) { width: 22%; } /* 生卒年 */
+.native-table.celebrities-table th:nth-child(7) { width: 7%; } /* 状态 */
+.native-table.celebrities-table th:nth-child(8) { width: 6%; } /* 关系 */
 .native-table.celebrities-table th:nth-child(9) { width: 15%; } /* 操作 */
 
 .status-dot {

@@ -20,6 +20,7 @@ const routes = [
       { path: 'celebrities/:id', name: 'admin-celebrity-edit', component: () => import('../views/admin/AdminCelebrityEdit.vue') },
       { path: 'celebrity-detail/:id', name: 'admin-celebrity-detail', component: () => import('../views/admin/AdminCelebrityDetail.vue') },
       { path: 'celebrity-view/:id', name: 'admin-celebrity-view', component: () => import('../views/admin/AdminCelebrityView.vue') },
+      { path: 'celebrity-graph/:id', name: 'admin-celebrity-graph', component: () => import('../views/admin/AdminCelebrityGraph.vue') },
       { path: 'settings', name: 'admin-settings', component: () => import('../views/admin/AdminSettings.vue') },
     ],
   },
