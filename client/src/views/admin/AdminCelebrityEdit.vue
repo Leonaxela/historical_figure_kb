@@ -7,7 +7,14 @@
         <!-- 基本信息 -->
         <el-col :span="8">
           <el-card class="edit-card">
-            <template #header><span>基本信息</span></template>
+            <template #header>
+              <div class="card-header">
+                <span>基本信息</span>
+                <button class="fav-btn" :title="celebrity?.is_favorite ? '取消收藏' : '收藏'" @click.stop="toggleFav">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="18" height="18"><path :fill="celebrity?.is_favorite ? '#f7c948' : '#c0c4cc'" :stroke="celebrity?.is_favorite ? '#f7c948' : '#c0c4cc'" stroke-width="40" d="M512 128l117.76 238.528 263.232 38.24-190.528 185.728 44.992 262.272L512 754.944 276.544 852.768l44.992-262.272L131.008 404.768l263.232-38.24z"/></svg>
+                </button>
+              </div>
+            </template>
             <div class="avatar-section">
               <div class="edit-avatar" @click="triggerUpload">
                 <img v-if="celebrity.image_url" :src="'/img/' + celebrity.image_url" />
@@ -265,6 +272,13 @@ function onEditDynastyChange(val) {
   }
 }
 
+async function toggleFav() {
+  const res = await celebrityApi.toggleFavorite(celebrity.value.id)
+  if (res.success) {
+    celebrity.value.is_favorite = res.data.is_favorite
+  }
+}
+
 async function saveProfile() {
   saving.value = true
   try {
@@ -502,6 +516,8 @@ onMounted(async () => {
   font-weight: 600;
   font-size: 14px;
 }
+.fav-btn { background:none; border:none; cursor:pointer; padding:2px; display:flex; align-items:center; line-height:1; }
+.fav-btn:hover svg path { fill:#f7c948; stroke:#f7c948; }
 
 .avatar-section { text-align: center; margin-bottom: 16px; }
 .edit-avatar {
@@ -711,14 +727,14 @@ onMounted(async () => {
   border: 1px solid #dcdfe6;
 }
 
-:deep(.el-tabs__item) { color: #909399; background: transparent; }
+:deep(.el-tabs__item) { color: #909399; background: transparent;font-size: 16px; }
 :deep(.el-tabs__item.is-active) { color: #409eff; }
 :deep(.el-tabs__active-bar) { background: #409eff; }
 :deep(.el-tabs__nav-wrap::after) { background: transparent; }
 :deep(.el-tabs__nav) { background: #fff; }
 
 .md-preview {
-  padding: 12px;
+  padding: 12px 12px 12px 28px;
   min-height: 200px;
   line-height: 1.8;
   font-size: 14px;
@@ -729,7 +745,7 @@ onMounted(async () => {
 }
 .md-preview h1, .md-preview h2, .md-preview h3 { margin: 16px 0 8px; font-weight: 600; }
 .md-preview p { margin: 0 0 8px; }
-.md-preview ul, .md-preview ol { padding-left: 20px; margin: 4px 0 8px; }
+.md-preview ul, .md-preview ol { padding-left: 24px; margin: 4px 0 8px; list-style-position: inside; }
 .md-preview li { margin-bottom: 2px; }
 .md-preview strong { font-weight: 600; }
 .md-preview code { background: #f0f2f5; padding: 1px 5px; border-radius: 3px; font-size: 13px; }
@@ -763,7 +779,7 @@ onMounted(async () => {
 }
 .fs-textarea:focus { border-color: #409eff; }
 .fs-preview {
-  flex: 1; overflow: auto;
+  flex: 1;
 }
 </style>
 
@@ -771,7 +787,9 @@ onMounted(async () => {
 <style>
 :root {
   --el-bg-color-overlay: #fff;
+  --el-message-z-index: 99999 !important;
 }
+.el-message { z-index: 99999 !important; }
 .edit-card .el-select * {
   color: #303133 !important;
 }

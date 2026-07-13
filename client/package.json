@@ -16,6 +16,7 @@
     "echarts": "^6.1.0",
     "echarts-wordcloud": "^2.1.0",
     "element-plus": "^2.8.0",
+    "katex": "^0.17.0",
     "markdown-it": "^14.3.0",
     "motion-v": "^2.3.0",
     "pinia": "^2.2.0",

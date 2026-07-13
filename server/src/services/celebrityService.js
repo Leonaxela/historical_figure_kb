@@ -152,7 +152,7 @@ export function updateCelebrity(id, data) {
   const params = [];
 
   for (const [key, value] of Object.entries(data)) {
-    if (['name', 'chinese_name', 'his_id', 'birth_date', 'death_date', 'nationality', 'occupation', 'biography', 'image_url', 'wiki_id', 'status'].includes(key)) {
+    if (['name', 'chinese_name', 'his_id', 'birth_date', 'death_date', 'nationality', 'occupation', 'biography', 'image_url', 'wiki_id', 'status', 'is_favorite'].includes(key)) {
       fields.push(`${key} = ?`);
       params.push(value ?? null);
     }
@@ -202,6 +202,19 @@ export function getOccupations() {
     }
   }
   return [...set].sort();
+}
+
+/**
+ * 获取收藏的名人
+ */
+export function getFavorites() {
+  const db = getDb();
+  const result = db.exec(`SELECT id, name, chinese_name, nationality, occupation, birth_date, death_date, image_url FROM celebrities WHERE is_favorite = 1 AND status IS NOT 0 ORDER BY updated_at DESC`);
+  return (result[0]?.values ?? []).map(v => ({
+    id: v[0], name: v[1], chinese_name: v[2],
+    nationality: v[3], occupation: v[4],
+    birth_date: v[5], death_date: v[6], image_url: v[7],
+  }));
 }
 
 /**

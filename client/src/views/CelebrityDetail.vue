@@ -231,11 +231,14 @@ onMounted(async () => {
 .rel-desc { font-size: 12px; color: #909399; }
 
 .content-collapse { border-top: none; }
+.content-collapse :deep(.el-collapse-item__header) {font-size: 16px;}
+
+
 .content-text { white-space: pre-wrap; line-height: 1.8; font-size: 14px; color: #303133; }
-.content-text.md { white-space: normal; }
+.content-text.md { white-space: normal; padding-left: 20px; }
 .content-text.md h1, .content-text.md h2, .content-text.md h3 { margin: 16px 0 8px; font-weight: 600; }
 .content-text.md p { margin: 0 0 8px; }
-.content-text.md ul, .content-text.md ol { padding-left: 20px; margin: 4px 0 8px; }
+.content-text.md ul, .content-text.md ol { padding-left: 20px; margin: 4px 0 8px; list-style-position: inside; }
 .content-text.md li { margin-bottom: 2px; }
 .content-text.md strong { font-weight: 600; }
 .content-text.md em { font-style: italic; }

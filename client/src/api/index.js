@@ -12,6 +12,8 @@ export const celebrityApi = {
   bulk(celebrities) { return api.post('/celebrities/bulk', { celebrities }).then(r => r.data) },
   nationalities() { return api.get('/celebrities/nationalities').then(r => r.data) },
   occupations() { return api.get('/celebrities/occupations').then(r => r.data) },
+  favorites() { return api.get('/celebrities/favorites').then(r => r.data) },
+  toggleFavorite(id) { return api.post(`/celebrities/${id}/favorite`).then(r => r.data) },
 }
 
 // 关系相关

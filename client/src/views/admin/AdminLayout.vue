@@ -28,6 +28,14 @@
           <el-icon><User /></el-icon>
           <span>名人管理</span>
         </el-menu-item>
+        <el-menu-item index="/admin/encyclopedia">
+          <el-icon><Document /></el-icon>
+          <span>名人百科</span>
+        </el-menu-item>
+        <el-menu-item index="/admin/works">
+          <el-icon><Reading /></el-icon>
+          <span>典籍著作</span>
+        </el-menu-item>
         <el-menu-item index="/admin/settings">
           <el-icon><Setting /></el-icon>
           <span>系统设置</span>
@@ -60,7 +68,7 @@
 import { ref, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '../../stores/auth.js'
-import { Grid, User, Setting } from '@element-plus/icons-vue'
+import { Grid, User, Setting, Document, Reading } from '@element-plus/icons-vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -73,6 +81,7 @@ const currentRoute = computed(() => {
   if (path.startsWith('/admin/celebrity-detail') || path.startsWith('/admin/celebrity-view')) return '/admin/dashboard'
   // 编辑页属于名人管理子界面
   if (route.name === 'admin-celebrity-edit' || route.name === 'admin-celebrity-graph') return '/admin/celebrities'
+  if (route.name === 'admin-fourier') return '/admin/works'
   return path.startsWith('/admin/') ? path : '/admin/dashboard'
 })
 
@@ -83,6 +92,9 @@ const pageTitle = computed(() => {
     'admin-celebrity-edit': '编辑名人',
     'admin-celebrity-detail': '数据看板',
     'admin-celebrity-view': '数据看板',
+    'admin-encyclopedia': '名人百科',
+    'admin-works': '典籍著作',
+    'admin-fourier': '傅里叶分析',
     'admin-settings': '系统设置',
   }
   return map[route.name] || '管理后台'

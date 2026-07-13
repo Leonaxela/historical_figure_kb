@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import {
   listCelebrities, getCelebrity, createCelebrity, updateCelebrity,
-  deleteCelebrity, getNationalities, getOccupations, bulkImport,
+  deleteCelebrity, getNationalities, getOccupations, getFavorites, bulkImport,
 } from '../services/celebrityService.js';
 import {
   getContents, upsertContents,
@@ -25,6 +25,12 @@ router.get('/nationalities', (req, res) => {
 
 router.get('/occupations', (req, res) => {
   const data = getOccupations();
+  res.json({ success: true, data });
+});
+
+// GET /api/celebrities/favorites — 收藏列表（必须在 /:id 前面）
+router.get('/favorites', (req, res) => {
+  const data = getFavorites();
   res.json({ success: true, data });
 });
 
@@ -59,6 +65,16 @@ router.post('/bulk', authMiddleware, (req, res) => {
   }
   const count = bulkImport(celebrities);
   res.json({ success: true, data: { imported: count } });
+});
+
+// POST /api/celebrities/:id/favorite — 切换收藏
+router.post('/:id/favorite', authMiddleware, (req, res) => {
+  const id = Number(req.params.id);
+  const celeb = getCelebrity(id);
+  if (!celeb) return res.status(404).json({ success: false, message: '未找到' });
+  const newVal = celeb.is_favorite ? 0 : 1;
+  updateCelebrity(id, { is_favorite: newVal });
+  res.json({ success: true, data: { is_favorite: newVal } });
 });
 
 router.put('/:id', authMiddleware, (req, res) => {
