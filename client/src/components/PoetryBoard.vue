@@ -9,7 +9,9 @@
         </el-input>
         <div class="btn-group">
           <el-button @click="openAdd">+ 添加诗词</el-button>
-          <el-button @click="resetLayout">≡ 重新排列</el-button>
+          <el-badge :value="props.poems.length" :hidden="!props.poems.length" class="total-badge">
+            <el-button @click="resetLayout">≡ 重新排列</el-button>
+          </el-badge>
         </div>
       </div>
     </div>
@@ -18,9 +20,10 @@
         :data-theme="p.theme || 'warm'"
         :data-id="p.id"
         :style="getCardStyle(p)"
-        @mousedown.prevent="onMouseDown($event, p)"
-        @touchstart.prevent="onTouchStart($event, p)"
+        @mousedown="onMouseDown($event, p)"
+        @touchstart="onTouchStart($event, p)"
         @dblclick="editPoem(p)">
+        <button class="card-del-btn" title="删除" @click.stop="deletePoem(p)">✕</button>
         <div class="card-title">{{ p.title }}</div>
         <div class="card-author">{{ p.author }}</div>
         <div class="card-body" :class="isPoem(p.content) ? 'poem' : 'prose'" v-html="formatContent(p.content)"></div>
@@ -63,7 +66,7 @@
 <script setup>
 import { ref, watch, onMounted, onUnmounted, nextTick } from 'vue'
 import { poemApi } from '../api/index.js'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 
 const props = defineProps({ poems: { type: Array, default: () => [] } })
 const emit = defineEmits(['update'])
@@ -100,7 +103,8 @@ function computeLayout() {
   const cw = Math.min(CARD_W, (bw - (cols - 1) * GAP) / cols)
   const sx = PAD + (bw - cols * cw - (cols - 1) * GAP) / 2 + (bw - cols * cw - (cols - 1) * GAP) / 2
   const pos = {}
-  props.poems.forEach((p, i) => {
+  const reversed = [...props.poems].reverse()
+  reversed.forEach((p, i) => {
     const col = i % cols, row = Math.floor(i / cols)
     pos[p.id] = { x: sx + col * (cw + GAP), y: PAD + 10 + row * ((p.card_height || CARD_H) + GAP), w: p.card_width || CARD_W, h: p.card_height || CARD_H }
   })
@@ -111,13 +115,14 @@ function resetLayout() { computeLayout() }
 
 let dragState = null, isDragging = false, rafId = null
 function onMouseDown(e, p) {
+  if (e.target.closest('.card-del-btn')) return
   const el = e.currentTarget; const rect = el.getBoundingClientRect()
-  const boardRect = boardRef.value.getBoundingClientRect()
-  dragState = { id: p.id, ox: e.clientX - rect.left, oy: e.clientY - rect.top }
+  dragState = { id: p.id, ox: e.clientX - rect.left, oy: e.clientY - rect.top, moved: false }
   isDragging = true; el.classList.add('dragging')
   document.addEventListener('mousemove', onMouseMove)
   document.addEventListener('mouseup', onMouseUp)
 }
+
 function onMouseMove(e) {
   if (!isDragging || !dragState) return
   if (rafId) cancelAnimationFrame(rafId)
@@ -130,6 +135,7 @@ function onMouseUp() {
   if (rafId) { cancelAnimationFrame(rafId); rafId = null }
   const el = dragState?.id ? boardRef.value?.querySelector(`[data-id="${dragState.id}"]`) : null
   if (el) el.classList.remove('dragging')
+  if (dragState?.moved && el) el.parentNode.appendChild(el)
   dragState = null
 }
 function onTouchStart(e, p) {
@@ -154,15 +160,18 @@ function onTouchEnd() {
   if (rafId) { cancelAnimationFrame(rafId); rafId = null }
   const el = dragState?.id ? boardRef.value?.querySelector(`[data-id="${dragState.id}"]`) : null
   if (el) el.classList.remove('dragging')
+  if (dragState?.moved && el) el.parentNode.appendChild(el)
   dragState = null
 }
 function moveCard(cx, cy) {
   if (!dragState) return
+  dragState.moved = true
   const boardRect = boardRef.value.getBoundingClientRect()
   const pos = cardPositions.value[dragState.id]
   if (pos) {
     pos.x = Math.max(2, Math.min(boardRect.width - pos.w - 2, cx - boardRect.left - dragState.ox))
-    pos.y = Math.max(2, Math.min(boardRect.height - pos.h - 2, cy - boardRect.top - dragState.oy))
+    pos.y = cy - boardRect.top - dragState.oy
+    pos.x = cx - boardRect.left - dragState.ox
     cardPositions.value = { ...cardPositions.value }
   }
 }
@@ -226,6 +235,17 @@ async function savePoem() {
   finally { saving.value = false }
 }
 
+async function deletePoem(p) {
+  try {
+    await ElMessageBox.confirm(`确定删除「${p.title}」？`, '确认删除', { type: 'warning', confirmButtonText: '删除', cancelButtonText: '取消' })
+  } catch { return }
+  try {
+    await poemApi.remove(p.id)
+    ElMessage.success('已删除')
+    emit('update')
+  } catch { ElMessage.error('删除失败') }
+}
+
 function isPoem(text) { return !text || text.split('\n').length > 1 || text.length < 80 }
 function formatContent(text) {
   if (!text) return ''
@@ -252,7 +272,7 @@ onUnmounted(() => window.removeEventListener('resize', onResize))
 .btn-group { display: flex; gap: 4px; }
 .section-actions :deep(.el-button) { margin-left: 8px; }
 .poetry-board { position: relative; width: 100%; min-height: 800px; background: #f5efe6; border-radius: 24px; border: 1px solid rgba(210,195,180,0.35); padding: 8px; overflow: hidden; }
-.poem-card { position: absolute; width: 280px; min-height: 320px; padding: 28px 24px 24px; background: rgba(255,250,242,0.92); backdrop-filter: blur(6px); border-radius: 24px 20px 24px 20px; box-shadow: 0 6px 28px rgba(140,120,100,0.12), 0 2px 8px rgba(140,120,100,0.06); border: 1px solid rgba(210,195,180,0.35); cursor: grab; display: flex; flex-direction: column; will-change: transform; }
+.poem-card { position: absolute; width: 280px; min-height: 320px; padding: 28px 24px 24px; background: rgba(255,250,242,0.92); backdrop-filter: blur(6px); border-radius: 24px 20px 24px 20px; box-shadow: 0 6px 28px rgba(140,120,100,0.12), 0 2px 8px rgba(140,120,100,0.06); border: 1px solid rgba(210,195,180,0.35); cursor: grab; display: flex; flex-direction: column; will-change: transform; user-select: none; }
 .poem-card::before { content: ''; position: absolute; top: 12px; right: 16px; width: 50px; height: 50px; background: radial-gradient(circle at 30% 30%, rgba(180,160,140,0.06), transparent 70%); border-radius: 50%; pointer-events: none; }
 .poem-card.dragging { cursor: grabbing; box-shadow: 0 20px 60px rgba(100,80,60,0.25), 0 8px 24px rgba(100,80,60,0.12); transform: scale(1.04) rotate(0.5deg); z-index: 1000; border-color: rgba(180,160,140,0.5); background: rgba(255,252,248,0.96); }
 .poem-card[data-theme="warm"] { background: linear-gradient(145deg, rgba(255,248,240,0.92), rgba(248,240,232,0.92)); }
@@ -277,9 +297,13 @@ onUnmounted(() => window.removeEventListener('resize', onResize))
 .card-body.poem .line { display: block; }
 .card-body.prose { text-align: justify; line-height: 2; font-size: 15px; }
 .card-seal { position: absolute; bottom: 16px; right: 18px; font-size: 11px; color: rgba(180,80,60,0.35); writing-mode: vertical-rl; transform: rotate(-6deg); pointer-events: none; opacity: 0.6; }
+.card-del-btn { position: absolute; top: 8px; right: 8px; width: 22px; height: 22px; padding: 0; border: none; border-radius: 50%; background: transparent; color: rgba(0,0,0,0.08); font-size: 12px; cursor: pointer; display: flex; align-items: center; justify-content: center; line-height: 1; z-index: 5; transition: all 0.15s; }
+.card-del-btn:hover { background: rgba(245,108,108,0.12); color: #f56c6c; }
 .board-hint { position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%); color: #b0a090; font-size: 13px; letter-spacing: 4px; opacity: 0.4; }
 .poem-card.highlight.centered { box-shadow: 0 0 0 3px #409eff, 0 12px 48px rgba(64,158,255,0.35) !important; z-index: 100; transition: left 0.4s ease, top 0.4s ease; }
 .poem-card.highlight-dim { box-shadow: 0 0 0 2px rgba(64,158,255,0.3), 0 4px 16px rgba(64,158,255,0.1) !important; }
 .search-info { margin-left: 8px; font-size: 12px; color: #909399; white-space: nowrap; }
+.total-badge { margin-left: 4px; }
+.total-badge :deep(.el-badge__content) { font-size: 10px; height: 16px; line-height: 16px; padding: 0 4px; }
 .theme-preview { display: inline-block; width: 20px; height: 20px; border-radius: 4px; margin-left: 8px; vertical-align: middle; border: 1px solid rgba(0,0,0,0.06); }
 </style>

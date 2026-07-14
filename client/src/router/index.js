@@ -25,6 +25,7 @@ const routes = [
       { path: 'works', name: 'admin-works', component: () => import('../views/admin/AdminWorks.vue') },
       { path: 'fourier', name: 'admin-fourier', component: () => import('../views/admin/AdminFourier.vue') },
       { path: 'newton', name: 'admin-newton', component: () => import('../views/admin/AdminNewton.vue') },
+      { path: 'reader/:filename', name: 'admin-reader', component: () => import('../views/admin/EpubReader.vue') },
       { path: 'settings', name: 'admin-settings', component: () => import('../views/admin/AdminSettings.vue') },
     ],
   },

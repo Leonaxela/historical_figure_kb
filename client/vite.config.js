@@ -14,6 +14,10 @@ export default defineConfig({
         target: 'http://localhost:3001',
         changeOrigin: true,
       },
+      '/ebook-cover': {
+        target: 'http://localhost:3001',
+        changeOrigin: true,
+      },
     },
   },
 })

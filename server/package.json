@@ -9,9 +9,11 @@
     "seed": "node src/seed/seedData.js"
   },
   "dependencies": {
+    "adm-zip": "^0.6.0",
     "bcrypt": "^6.0.0",
     "cors": "^2.8.5",
     "express": "^4.18.2",
+    "fast-xml-parser": "^5.10.0",
     "jsonwebtoken": "^9.0.3",
     "multer": "^2.2.0",
     "node-fetch": "^3.3.2",

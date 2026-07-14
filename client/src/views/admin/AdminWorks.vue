@@ -55,6 +55,10 @@
 
     <PoetryBoard :poems="poems" @update="onPoemsUpdate" />
 
+    <NoteBoard :notes="notes" @update="onNotesUpdate" />
+
+    <EBookShelf :ebooks="ebooks" />
+
     <!-- 编辑弹窗 -->
     <el-dialog v-model="showForm" :title="editId ? '编辑著作' : '新增著作'" width="480px">
       <el-form :model="form" label-width="70px">
@@ -73,14 +77,18 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { workApi, celebrityApi, poemApi } from '../../api/index.js'
+import { workApi, celebrityApi, poemApi, noteApi, ebookApi } from '../../api/index.js'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import PoetryBoard from '../../components/PoetryBoard.vue'
+import NoteBoard from '../../components/NoteBoard.vue'
+import EBookShelf from '../../components/EBookShelf.vue'
 import { displayNationality } from '../../utils/dynasty.js'
 
 const router = useRouter()
 const works = ref([])
 const poems = ref([])
+const notes = ref([])
+const ebooks = ref([])
 const allCelebrities = ref([])
 const addCelebId = ref(null)
 const showForm = ref(false)
@@ -248,11 +256,22 @@ function onPoemsUpdate(updated) {
   }
 }
 
+function onNotesUpdate(updated) {
+  if (updated && updated.id) {
+    const n = notes.value.find(x => x.id === updated.id)
+    if (n) Object.assign(n, updated)
+  } else {
+    loadWorks()
+  }
+}
+
 async function loadWorks() {
-  const [wr, cr, pr] = await Promise.all([workApi.list(), celebrityApi.list({ pageSize: 9999 }), poemApi.list()])
+  const [wr, cr, pr, nr, er] = await Promise.all([workApi.list(), celebrityApi.list({ pageSize: 9999 }), poemApi.list(), noteApi.list(), ebookApi.list()])
   if (wr.success) works.value = wr.data || []
   if (cr.success) allCelebrities.value = cr.data || []
   if (pr.success) poems.value = pr.data || []
+  if (nr.success) notes.value = nr.data || []
+  if (er.success) ebooks.value = er.data || []
 }
 
 onMounted(loadWorks)

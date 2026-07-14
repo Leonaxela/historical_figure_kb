@@ -66,6 +66,19 @@ export const poemApi = {
   remove(id) { return api.delete(`/poems/${id}`).then(r => r.data) },
 }
 
+// 便签相关
+export const noteApi = {
+  list() { return api.get('/notes').then(r => r.data) },
+  create(data) { return api.post('/notes', data).then(r => r.data) },
+  update(id, data) { return api.put(`/notes/${id}`, data).then(r => r.data) },
+  remove(id) { return api.delete(`/notes/${id}`).then(r => r.data) },
+}
+
+// 电子书相关
+export const ebookApi = {
+  list() { return api.get('/ebooks').then(r => r.data) },
+}
+
 // 名人称谓
 export const tagApi = {
   list() { return api.get('/tags').then(r => r.data) },

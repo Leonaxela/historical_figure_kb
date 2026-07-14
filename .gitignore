@@ -2,7 +2,10 @@ server/node_modules/
 client/node_modules/
 client/dist/
 .reasonix/
+node_modules/
 server/src/testmjs/
 reasonix.toml
 shuhan_celebrities/
+server/data/ebook/
+
 

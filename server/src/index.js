@@ -12,6 +12,8 @@ import graphRouter from './routes/graph.js';
 import uploadRouter from './routes/upload.js';
 import tagsRouter from './routes/tags.js';
 import poemsRouter from './routes/poems.js';
+import notesRouter from './routes/notes.js';
+import ebooksRouter from './routes/ebooks.js';
 import authRouter, { authMiddleware } from './routes/auth.js';
 
 const app = express();
@@ -22,6 +24,8 @@ app.use(cors());
 app.use(express.json({ limit: '10mb' }));
 // 静态文件 — 人物图片
 app.use('/img', express.static(path.join(__dirname, '../data/img')));
+// 静态文件 — 电子书封面
+app.use('/ebook-cover', express.static(path.join(__dirname, '../data/ebook/.covers')));
 
 // API 路由
 app.use('/api/celebrities', celebritiesRouter);
@@ -31,6 +35,8 @@ app.use('/api/graph', graphRouter);
 app.use('/api/tags', tagsRouter);
 app.use('/api/works', worksRouter);
 app.use('/api/poems', poemsRouter);
+app.use('/api/notes', notesRouter);
+app.use('/api/ebooks', ebooksRouter);
 app.use('/api', authRouter);
 
 // 健康检查
