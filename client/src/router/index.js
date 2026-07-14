@@ -24,6 +24,7 @@ const routes = [
       { path: 'encyclopedia', name: 'admin-encyclopedia', component: () => import('../views/admin/AdminEncyclopedia.vue') },
       { path: 'works', name: 'admin-works', component: () => import('../views/admin/AdminWorks.vue') },
       { path: 'fourier', name: 'admin-fourier', component: () => import('../views/admin/AdminFourier.vue') },
+      { path: 'newton', name: 'admin-newton', component: () => import('../views/admin/AdminNewton.vue') },
       { path: 'settings', name: 'admin-settings', component: () => import('../views/admin/AdminSettings.vue') },
     ],
   },

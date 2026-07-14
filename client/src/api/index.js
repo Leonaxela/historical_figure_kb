@@ -50,6 +50,22 @@ export const healthApi = {
   check() { return api.get('/health').then(r => r.data) },
 }
 
+// 著作相关
+export const workApi = {
+  list() { return api.get('/works').then(r => r.data) },
+  create(data) { return api.post('/works', data).then(r => r.data) },
+  update(id, data) { return api.put(`/works/${id}`, data).then(r => r.data) },
+  remove(id) { return api.delete(`/works/${id}`).then(r => r.data) },
+}
+
+// 诗词相关
+export const poemApi = {
+  list() { return api.get('/poems').then(r => r.data) },
+  create(data) { return api.post('/poems', data).then(r => r.data) },
+  update(id, data) { return api.put(`/poems/${id}`, data).then(r => r.data) },
+  remove(id) { return api.delete(`/poems/${id}`).then(r => r.data) },
+}
+
 // 名人称谓
 export const tagApi = {
   list() { return api.get('/tags').then(r => r.data) },
