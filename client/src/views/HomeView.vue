@@ -5,13 +5,13 @@
         <span class="prefix">古今中外名人</span>
         <RotatingText
           :texts="['生平', '关系', '图谱', '史料', '轶事']"
-          :rotation-interval="2200"
-          :stagger-duration="0.025"
+          :rotation-interval="2600"
+          :stagger-duration="0.06"
           stagger-from="last"
           :initial="{ y: '100%' }"
           :animate="{ y: 0 }"
           :exit="{ y: '-120%' }"
-          :transition="{ type: 'spring', damping: 30, stiffness: 400 }"
+          :transition="{ type: 'spring', damping: 22, stiffness: 150 }"
           main-class-name="rotating-inline"
           split-level-class-name="rotating-split"
           element-level-class-name="rotating-char"

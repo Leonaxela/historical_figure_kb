@@ -110,7 +110,7 @@ const contentActive = ref('biography')
 
 const contentTabs = [
   { key: 'biography', label: '📜 生平' },
-  { key: 'works', label: '📖 著作' },
+  { key: 'works', label: '🏆成就/📖著作' },
   { key: 'influence', label: '💡 影响' },
   { key: 'anecdotes', label: '🎭 轶事' },
 ]

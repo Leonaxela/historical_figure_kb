@@ -47,6 +47,9 @@
               <el-form-item label="逝世">
                 <el-input v-model="editForm.death_date" />
               </el-form-item>
+              <el-form-item label="sort_id" v-if="editForm.nationality === '中国' && editForm.occupation?.includes('皇帝')">
+                <el-input v-model="editForm.sort_id" placeholder="如 ming_1、xihan_1" />
+              </el-form-item>
               <el-form-item label="his_id">
                 <code class="his-id">{{ editForm.his_id }}</code>
               </el-form-item>
@@ -108,7 +111,7 @@
                   <el-button size="small" type="primary" @click="saveContents" :loading="contentSaving">保存全部内容</el-button>
                 </div>
               </el-tab-pane>
-              <el-tab-pane label="📖著作" name="works">
+              <el-tab-pane label="🏆成就/📖著作" name="works">
                 <div v-if="previewTab === 'works'" class="md-preview" v-html="renderMd(contents.works)"></div>
                 <el-input v-else v-model="contents.works" type="textarea" :rows="8" />
                 <div class="tab-footer">
@@ -391,7 +394,7 @@ const contentSaving = ref(false)
 const previewTab = ref(null)
 const fullscreenTab = ref(null)
 const fsPreview = ref(false)
-const tabLabels = { biography: '生平', works: '著作', influence: '影响', anecdotes: '轶事' }
+const tabLabels = { biography: '生平', works: '成就/著作', influence: '影响', anecdotes: '轶事' }
 
 const TL_COLORS = { '升迁': '#67c23a', '贬谪': '#f56c6c', '创作': '#e6a23c', '婚丧': '#909399', '其他': '#409eff' }
 function tlTypeColor(type) { return TL_COLORS[type] || '#909399' }

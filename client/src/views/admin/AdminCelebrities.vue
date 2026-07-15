@@ -2,7 +2,10 @@
   <div class="admin-celebrities">
     <!-- 工具栏 -->
     <div class="toolbar">
-      <el-button type="primary" :icon="Plus" @click="showCreate = true">新增名人</el-button>
+      <div class="toolbar-left">
+        <el-button type="primary" :icon="Plus" @click="showCreate = true">新增名人</el-button>
+        <el-button type="primary" :icon="showCards ? List : Grid" @click="showCards = !showCards">{{ showCards ? '表格展示' : '展示名人' }}</el-button>
+      </div>
       <div class="toolbar-right">
         <el-select v-model="filterTag" placeholder="称谓" clearable filterable style="width:150px" @change="onFilterChange">
           <el-option v-for="t in tags" :key="t.id" :label="t.name" :value="t.id" />
@@ -19,8 +22,26 @@
       </div>
     </div>
 
+    <!-- 卡片模式 -->
+    <div class="card-grid" v-if="showCards">
+      <div class="admin-card" v-for="c in list" :key="c.id" @click="goEdit(c)">
+        <div class="card-avatar-lg">
+          <img v-if="c.image_url" :src="'/img/' + c.image_url" :alt="c.chinese_name || c.name" />
+          <span v-else>{{ (c.chinese_name || c.name).charAt(0) }}</span>
+        </div>
+        <div class="card-name">{{ c.chinese_name || c.name }}</div>
+        <div class="card-en-name" v-if="c.chinese_name">{{ c.name }}</div>
+        <div class="card-meta">
+          <el-tag size="small" v-if="c.nationality">{{ c.nationality.replace('中国_', '') }}</el-tag>
+          <el-tag size="small" type="success" v-if="c.occupation" style="margin-left:4px">{{ c.occupation.split('、')[0] }}</el-tag>
+        </div>
+        <div class="card-rels">{{ c.relation_count ?? 0 }} 条关联</div>
+      </div>
+      <div class="card-empty" v-if="!loading && list.length === 0">暂无数据</div>
+    </div>
+
     <!-- 表格 -->
-    <div class="table-wrap">
+    <div class="table-wrap" v-if="!showCards">
       <table class="native-table celebrities-table">
         <thead>
           <tr>
@@ -126,7 +147,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { celebrityApi, tagApi } from '../../api/index.js'
-import { Search, Plus } from '@element-plus/icons-vue'
+import { Search, Plus, Grid, List } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 
 const router = useRouter()
@@ -144,6 +165,7 @@ const tags = ref([])
 const loading = ref(false)
 const creating = ref(false)
 const showCreate = ref(false)
+const showCards = ref(true)
 const formRef = ref(null)
 
 const DYNASTY_LABELS = {
@@ -238,6 +260,7 @@ function saveFilters() {
     nationality: filterNationality.value,
     occupation: filterOccupation.value,
     tagId: filterTag.value,
+    showCards: showCards.value,
   }))
 }
 function restoreFilters() {
@@ -249,6 +272,7 @@ function restoreFilters() {
     filterNationality.value = f.nationality || ''
     filterOccupation.value = f.occupation || ''
     filterTag.value = f.tagId || ''
+    showCards.value = f.showCards ?? false
     sessionStorage.removeItem('adminCelebFilters')
   } catch {}
 }
@@ -306,6 +330,11 @@ onMounted(() => {
   align-items: center;
   justify-content: space-between;
   margin-bottom: 18px;
+}
+.toolbar-left {
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .toolbar-right {
@@ -443,6 +472,40 @@ onMounted(() => {
   animation: lspin 0.7s linear infinite;
 }
 @keyframes lspin { to { transform: rotate(360deg); } }
+
+/* ─── 卡片模式 ─── */
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 20px;
+}
+.admin-card {
+  background: #fff;
+  border-radius: 12px;
+  padding: 20px 12px 16px;
+  text-align: center;
+  cursor: pointer;
+  border: 1px solid #e4e7ed;
+  transition: all 0.2s;
+}
+.admin-card:hover { transform: translateY(-4px); box-shadow: 0 8px 24px rgba(0,0,0,0.08); border-color: #409eff; }
+.card-avatar-lg {
+  width: 96px; height: 96px; line-height: 96px;
+  border-radius: 50%; margin: 0 auto 10px;
+  background: linear-gradient(135deg, #409eff, #6366f1);
+  color: #fff; font-size: 36px; font-weight: 700;
+  overflow: hidden;
+}
+.card-avatar-lg img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.card-name { font-size: 16px; font-weight: 600; color: #303133; margin-bottom: 2px; }
+.card-en-name { font-size: 12px; color: #909399; margin-bottom: 8px; }
+.card-meta { margin-bottom: 6px; }
+.card-rels { font-size: 12px; color: #c0c4cc; }
+.card-empty {
+  grid-column: 1 / -1;
+  text-align: center; padding: 60px 0;
+  font-size: 15px; color: #b0a090;
+}
 
 /* ─── 对话框（保持深色） ─── */
 :deep(.dark-dialog) {

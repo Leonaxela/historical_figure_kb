@@ -22,8 +22,8 @@ export function listCelebrities({ page = 1, pageSize = 20, search, nationality, 
     params.push(`%${nationality}%`);
   }
   if (occupation) {
-    conditions.push('c.occupation LIKE ?');
-    params.push(`%${occupation}%`);
+    conditions.push("'、' || c.occupation || '、' LIKE ?");
+    params.push(`%、${occupation}、%`);
   }
   if (tagId) {
     conditions.push('c.id IN (SELECT celebrity_id FROM celebrity_tags WHERE tag_id = ?)');
@@ -39,6 +39,14 @@ export function listCelebrities({ page = 1, pageSize = 20, search, nationality, 
 
   // 分页数据
   const offset = (page - 1) * pageSize;
+  // 排序
+  let orderBy = 'c.updated_at DESC';
+  if (tagId) {
+    orderBy = '(SELECT ct.sort_order FROM celebrity_tags ct WHERE ct.tag_id = ? AND ct.celebrity_id = c.id) ASC, c.updated_at DESC';
+    params.push(tagId);
+  } else if (nationality && nationality.startsWith('中国') && occupation && occupation.includes('皇帝')) {
+    orderBy = "(CASE WHEN c.sort_id = '' THEN 1 ELSE 0 END), SUBSTR(c.sort_id, 1, INSTR(c.sort_id, '_') - 1) ASC, CAST(SUBSTR(c.sort_id, INSTR(c.sort_id, '_') + 1) AS INTEGER) ASC, c.updated_at DESC";
+  }
   const dataSql = `
     SELECT c.*, 
       (SELECT COUNT(*) FROM (
@@ -53,7 +61,7 @@ export function listCelebrities({ page = 1, pageSize = 20, search, nationality, 
       )) as relation_count
     FROM celebrities c
     ${where}
-    ORDER BY c.updated_at DESC
+    ORDER BY ${orderBy}
     LIMIT ? OFFSET ?
   `;
   const stmt = db.prepare(dataSql);
@@ -152,7 +160,7 @@ export function updateCelebrity(id, data) {
   const params = [];
 
   for (const [key, value] of Object.entries(data)) {
-    if (['name', 'chinese_name', 'his_id', 'birth_date', 'death_date', 'nationality', 'occupation', 'biography', 'image_url', 'wiki_id', 'status', 'is_favorite'].includes(key)) {
+    if (['name', 'chinese_name', 'his_id', 'birth_date', 'death_date', 'nationality', 'occupation', 'biography', 'image_url', 'wiki_id', 'status', 'is_favorite', 'sort_id'].includes(key)) {
       fields.push(`${key} = ?`);
       params.push(value ?? null);
     }

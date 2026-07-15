@@ -3,7 +3,7 @@
     <el-header class="app-header" v-if="!isAdminRoute">
       <div class="header-content">
         <div class="logo" @click="$router.push('/')">
-          <div class="logo-icon">✦</div>
+          <img src="/logo-transparent.svg" class="logo-icon" alt="古今人物" />
           <span class="logo-text">古今人物</span>
         </div>
         <el-menu
@@ -69,11 +69,10 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto
   margin-right: 40px;
 }
 .logo-icon {
-  font-size: 24px;
-  color: #409eff;
-  animation: spin 12s linear infinite;
+  width: 32px;
+  height: 32px;
+  object-fit: contain;
 }
-@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 .logo-text {
   font-size: 18px;
   font-weight: 700;
