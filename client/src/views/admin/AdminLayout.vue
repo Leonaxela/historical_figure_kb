@@ -81,6 +81,7 @@ const currentRoute = computed(() => {
   if (path.startsWith('/admin/celebrity-detail') || path.startsWith('/admin/celebrity-view')) return '/admin/dashboard'
   // 编辑页属于名人管理子界面
   if (route.name === 'admin-celebrity-edit' || route.name === 'admin-celebrity-graph') return '/admin/celebrities'
+  if (route.name === 'admin-encyclopedia-detail') return '/admin/encyclopedia'
   if (route.name === 'admin-fourier' || route.name === 'admin-newton') return '/admin/works'
   return path.startsWith('/admin/') ? path : '/admin/dashboard'
 })
@@ -93,6 +94,7 @@ const pageTitle = computed(() => {
     'admin-celebrity-detail': '数据看板',
     'admin-celebrity-view': '数据看板',
     'admin-encyclopedia': '名人百科',
+    'admin-encyclopedia-detail': '名人百科',
     'admin-works': '典籍著作',
     'admin-fourier': '傅里叶分析',
     'admin-newton': '牛顿三大定律',

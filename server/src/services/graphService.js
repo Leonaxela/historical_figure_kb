@@ -14,7 +14,42 @@ export function getGraphData({ centerIds, depth = 1, category, limit = 200 } = {
   if (centerIds && centerIds.length > 0) {
     return getEgoGraph(centerIds, Number(depth), category, Number(limit));
   }
-  return getFullGraph(category, Number(limit));
+  // 默认：加载所有名人节点（不带关系，避免卡顿）
+  const stmt = db.prepare(`SELECT id, name, chinese_name, nationality, occupation, image_url, biography, birth_date, death_date FROM celebrities ORDER BY id`);
+  const nodes = [];
+  while (stmt.step()) {
+    nodes.push(stmt.getAsObject());
+  }
+  stmt.free();
+  return { nodes, edges: [] };
+}
+
+/**
+ * 获取关系数最多的前 N 个名人的 ID
+ */
+function getTopConnectedIds(n) {
+  const db = getDb();
+  const stmt = db.prepare(`
+    SELECT c.id FROM celebrities c
+    ORDER BY (
+      SELECT COUNT(DISTINCT
+        CASE WHEN r.source_id < r.target_id
+          THEN r.source_id || '-' || r.target_id || '-' || r.type_id
+          ELSE r.target_id || '-' || r.source_id || '-' || r.type_id END
+      ) FROM relationships r
+      JOIN relation_types rt ON r.type_id = rt.id
+      WHERE (r.source_id = c.id OR r.target_id = c.id)
+        AND (rt.direction != 'from' OR r.source_id = c.id)
+    ) DESC
+    LIMIT ?
+  `);
+  stmt.bind([n]);
+  const ids = [];
+  while (stmt.step()) {
+    ids.push(stmt.getAsObject().id);
+  }
+  stmt.free();
+  return ids;
 }
 
 /**
@@ -54,7 +89,7 @@ function getFullGraph(category, limit) {
   // 查询节点信息
   const ids = [...nodeIds];
   const placeholders = ids.map(() => '?').join(',');
-  const nodeSql = `SELECT id, name, chinese_name, nationality, occupation, image_url, biography FROM celebrities WHERE id IN (${placeholders})`;
+  const nodeSql = `SELECT id, name, chinese_name, nationality, occupation, image_url, biography, birth_date, death_date FROM celebrities WHERE id IN (${placeholders})`;
   const nodeStmt = db.prepare(nodeSql);
   nodeStmt.bind(ids);
   const nodes = [];
@@ -77,7 +112,7 @@ function getEgoGraph(centerIds, depth, category, limit) {
 
   // 查询所有中心节点
   const placeholders = ids.map(() => '?').join(',');
-  const centerStmt = db.prepare(`SELECT id, name, chinese_name, nationality, occupation, image_url, biography FROM celebrities WHERE id IN (${placeholders})`);
+  const centerStmt = db.prepare(`SELECT id, name, chinese_name, nationality, occupation, image_url, biography, birth_date, death_date FROM celebrities WHERE id IN (${placeholders})`);
   centerStmt.bind(ids);
   const nodes = [];
   while (centerStmt.step()) {
@@ -132,7 +167,7 @@ function getEgoGraph(centerIds, depth, category, limit) {
     if (nextLevel.length > 0 && nodes.length < limit) {
       const chunk = nextLevel.slice(0, limit - nodes.length);
       const placeholders = chunk.map(() => '?').join(',');
-      const nodeSql = `SELECT id, name, chinese_name, nationality, occupation, image_url, biography FROM celebrities WHERE id IN (${placeholders})`;
+      const nodeSql = `SELECT id, name, chinese_name, nationality, occupation, image_url, biography, birth_date, death_date FROM celebrities WHERE id IN (${placeholders})`;
       const nodeStmt = db.prepare(nodeSql);
       nodeStmt.bind(chunk);
       while (nodeStmt.step()) {

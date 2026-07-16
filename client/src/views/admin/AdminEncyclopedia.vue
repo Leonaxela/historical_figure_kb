@@ -1,7 +1,12 @@
 <template>
   <div class="encyclopedia">
+    <!-- 名人跑马灯 -->
+    <FamousMarquee :celebrities="favorites" />
+
+    <!-- 展示卡片 -->
+    <div class="section-label" v-if="favorites.length">收藏名人</div>
     <div v-if="favorites.length" class="fav-grid">
-      <div class="fav-card" v-for="c in favorites" :key="c.id">
+      <div class="fav-card" v-for="c in favorites" :key="c.id" @click="$router.push('/admin/encyclopedia/' + c.id)">
         <div class="fav-avatar">
           <img v-if="c.image_url" :src="'/img/' + c.image_url" />
           <span v-else>{{ (c.chinese_name || c.name).charAt(0) }}</span>
@@ -15,12 +20,14 @@
         <div class="fav-dates" v-if="c.birth_date">{{ c.birth_date }} ~ {{ c.death_date || '至今' }}</div>
       </div>
     </div>
+    <el-empty v-if="!favorites.length" description="暂无收藏名人，在名人管理中点亮 ⭐ 即可收藏" />
   </div>
 </template>
 
 <script setup>
 import { ref, onMounted } from 'vue'
 import { celebrityApi } from '../../api/index.js'
+import FamousMarquee from '../../components/FamousMarquee.vue'
 
 const favorites = ref([])
 
@@ -32,8 +39,10 @@ onMounted(async () => {
 
 <style scoped>
 .encyclopedia { max-width: 1200px; width: 100%; margin: 0 auto; }
-.page-header { margin-bottom: 20px; }
-.page-title { font-size: 24px; font-weight: 700; }
+.section-label {
+  font-size: 16px; font-weight: 600; color: #303133;
+  margin-bottom: 16px; padding-left: 4px;
+}
 .fav-grid {
   display: grid;
   grid-template-columns: repeat(5, 1fr);
@@ -46,7 +55,7 @@ onMounted(async () => {
   padding: 28px 14px 20px;
   text-align: center;
   transition: all 0.25s ease;
-  cursor: default;
+  cursor: pointer;
 }
 .fav-card:hover {
   box-shadow: 0 8px 28px rgba(0,0,0,0.07);

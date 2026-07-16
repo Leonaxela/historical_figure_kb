@@ -14,10 +14,14 @@
           <el-option label="扩展至两层" :value="2" />
         </el-select>
         <el-button @click="resetZoom" :icon="ZoomOut">重置视角</el-button>
+        <el-button @click="toggleFullscreen" :icon="FullScreen">全屏</el-button>
       </div>
     </div>
 
-    <el-card shadow="never" class="graph-card" :body-style="{ overflow: 'hidden', height: '100%', padding: '0' }">
+    <el-card shadow="never" class="graph-card" :class="{ 'graph-fullscreen': graphFullscreen }" :body-style="{ overflow: 'hidden', height: '100%', padding: '0' }">
+      <button v-if="graphFullscreen" class="exit-fullscreen-btn" title="退出全屏" @click="toggleFullscreen">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="16" height="16"><path fill="currentColor" d="M576 128a32 32 0 0 1 32-32h288a32 32 0 0 1 32 32v288a32 32 0 0 1-64 0V192H608a32 32 0 0 1-32-32zM128 576a32 32 0 0 1 32 32v256h256a32 32 0 1 1 0 64H160a32 32 0 0 1-32-32V608a32 32 0 0 1 32-32zm704 0a32 32 0 0 1 32 32v288a32 32 0 0 1-32 32H576a32 32 0 0 1 0-64h256V608a32 32 0 0 1 32-32zM128 160a32 32 0 0 1 32-32h288a32 32 0 0 1 0 64H192v256a32 32 0 0 1-64 0V160z"/></svg>
+      </button>
       <div class="graph-container" ref="graphRef">
         <svg ref="svgRef" class="graph-svg" @mousedown="onSvgDown" @mousemove="onSvgMove" @mouseup="onSvgUp" @wheel.prevent="onWheel">
           <!-- 箭头定义（按节点颜色索引）-->
@@ -30,6 +34,9 @@
               :id="'as-c'+i" markerWidth="8" markerHeight="6" refX="0" refY="3" orient="auto">
               <polygon :fill="c" points="8 0, 0 3, 8 6" />
             </marker>
+            <clipPath v-for="n in displayNodes" :key="'cp-'+n.id" :id="'clip-'+n.id">
+              <circle :r="nodeRadius(n)" cx="0" cy="0" />
+            </clipPath>
           </defs>
           <g ref="graphGroup">
             <!-- 连线 -->
@@ -69,8 +76,13 @@
                 @mousedown.stop="onNodeDown($event, n, i)"
                 @dblclick.stop="showNodeDetail(n)"
               >
-                <circle :r="nodeRadius(n)" :fill="nodeColor(n)" stroke="#fff" stroke-width="2"
+                <image v-if="n.image_url" :x="-nodeRadius(n)" :y="-nodeRadius(n)"
+                  :width="nodeRadius(n)*2" :height="nodeRadius(n)*2"
+                  :href="'/img/' + n.image_url"
+                  :clip-path="'url(#clip-'+n.id+')'" />
+                <circle v-else :r="nodeRadius(n)" :fill="nodeColor(n)" stroke="#fff" stroke-width="2"
                   :class="{ 'pulse': selectedNode === n.id }" />
+                <circle :r="nodeRadius(n)" fill="none" stroke="#fff" stroke-width="2" />
                 <text text-anchor="middle" :dy="nodeRadius(n) + 14" font-size="11" fill="#303133" font-weight="500"
                   class="node-label">{{ n.chinese_name || n.name }}</text>
                 <text text-anchor="middle" :dy="nodeRadius(n) + 26" font-size="9" fill="#909399"
@@ -94,13 +106,17 @@
     <!-- 节点详情弹窗 -->
     <el-dialog v-model="showDetail" :title="detailNode?.chinese_name || detailNode?.name" width="380px" @close="selectedNode = null">
       <div class="detail-popup" v-if="detailNode">
-        <div class="popup-avatar">{{ (detailNode.chinese_name || detailNode.name).charAt(0) }}</div>
+        <div class="popup-avatar">
+          <img v-if="detailNode.image_url" :src="'/img/' + detailNode.image_url" />
+          <span v-else>{{ (detailNode.chinese_name || detailNode.name).charAt(0) }}</span>
+        </div>
         <p class="popup-name">{{ detailNode.chinese_name || detailNode.name }}</p>
+        <p class="popup-dates" v-if="detailNode.birth_date">{{ detailNode.birth_date }} ~ {{ detailNode.death_date || '至今' }}</p>
         <p class="popup-en" v-if="detailNode.chinese_name">{{ detailNode.name }}</p>
-        <p class="popup-bio" v-if="detailNode.biography">{{ detailNode.biography.slice(0, 100) }}...</p>
+        <p class="popup-bio" v-if="detailNode.biography">{{ detailNode.biography.length > 100 ? detailNode.biography.slice(0, 100) + '...' : detailNode.biography }}</p>
         <div class="popup-meta">
-          <span v-if="detailNode.nationality">🌍 {{ displayNationality(detailNode) }}</span>
-          <span v-if="detailNode.occupation">💼 {{ detailNode.occupation }}</span>
+          <span v-if="detailNode.nationality">🏛️ {{ (detailNode.nationality || '').replace('中国_', '') }}</span>
+          <span v-if="detailNode.occupation">📜 {{ detailNode.occupation }}</span>
         </div>
       </div>
       <template #footer>
@@ -118,8 +134,7 @@ import { graphApi, celebrityApi, relationApi } from '../api/index.js'
 import * as d3Force from 'd3-force'
 import * as d3Zoom from 'd3-zoom'
 import * as d3Selection from 'd3-selection'
-import { ZoomOut, Loading } from '@element-plus/icons-vue'
-import { displayNationality } from '../utils/dynasty.js'
+import { ZoomOut, Loading, FullScreen } from '@element-plus/icons-vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -137,6 +152,7 @@ const relationTypes = ref([])
 const allCelebrities = ref([])
 const showDetail = ref(false)
 const detailNode = ref(null)
+const graphFullscreen = ref(false)
 
 const typeFilter = ref(route.query.type || '')
 const categoryFilter = ref('')
@@ -147,7 +163,7 @@ const depth = ref(Number(route.query.depth) || 1)
 const nodeColors = ['#409eff', '#67c23a', '#f56c6c', '#909399', '#e6a23c', '#8b5cf6', '#10b981']
 
 function nodeRadius(n) {
-  const base = 16
+  const base = 24
   const count = n.relation_count || edges.value.filter(e => {
     const sId = e.source?.id ?? e.source
     const tId = e.target?.id ?? e.target
@@ -364,6 +380,10 @@ function goToDetail() {
   }
 }
 
+function toggleFullscreen() {
+  graphFullscreen.value = !graphFullscreen.value
+}
+
 // 加载选项
 async function loadOptions() {
   const [typesRes, listRes] = await Promise.all([
@@ -420,14 +440,26 @@ onUnmounted(() => {
   background: rgba(255,255,255,0.7);
   font-size: 14px; color: #909399;
 }
+.graph-card.graph-fullscreen { position: fixed; inset: 0; z-index: 1000; height: 100vh; border-radius: 0; }
+.graph-card.graph-fullscreen :deep(.el-card__body) { height: 100vh !important; }
+.exit-fullscreen-btn {
+  position: absolute; top: 12px; right: 12px; z-index: 10;
+  width: 32px; height: 32px; border-radius: 6px;
+  border: 1px solid #dcdfe6; background: #fff;
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+  color: #606266; transition: all 0.15s;
+}
+.exit-fullscreen-btn:hover { border-color: #409eff; color: #409eff; }
 .detail-popup { text-align: center; }
 .popup-avatar {
   width: 64px; height: 64px; line-height: 64px;
   border-radius: 50%; background: linear-gradient(135deg, #409eff, #6366f1);
   color: #fff; font-size: 24px; font-weight: 700;
-  margin: 0 auto 12px;
+  margin: 0 auto 12px; overflow: hidden;
 }
-.popup-name { font-size: 18px; font-weight: 600; margin-bottom: 4px; }
+.popup-avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.popup-name { font-size: 18px; font-weight: 600; margin-bottom: 2px; }
+.popup-dates { font-size: 13px; color: #909399; margin-bottom: 4px; }
 .popup-en { font-size: 13px; color: #909399; margin-bottom: 8px; }
 .popup-bio { font-size: 13px; color: #606266; margin-bottom: 8px; line-height: 1.5; }
 .popup-meta { display: flex; gap: 12px; justify-content: center; font-size: 13px; color: #909399; }

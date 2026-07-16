@@ -22,6 +22,7 @@ const routes = [
       { path: 'celebrity-view/:id', name: 'admin-celebrity-view', component: () => import('../views/admin/AdminCelebrityView.vue') },
       { path: 'celebrity-graph/:id', name: 'admin-celebrity-graph', component: () => import('../views/admin/AdminCelebrityGraph.vue') },
       { path: 'encyclopedia', name: 'admin-encyclopedia', component: () => import('../views/admin/AdminEncyclopedia.vue') },
+      { path: 'encyclopedia/:id', name: 'admin-encyclopedia-detail', component: () => import('../views/admin/EncyclopediaDetail.vue') },
       { path: 'works', name: 'admin-works', component: () => import('../views/admin/AdminWorks.vue') },
       { path: 'fourier', name: 'admin-fourier', component: () => import('../views/admin/AdminFourier.vue') },
       { path: 'newton', name: 'admin-newton', component: () => import('../views/admin/AdminNewton.vue') },

@@ -93,8 +93,8 @@ export function getCelebrity(id, includeHidden = false) {
   // 查询该名人的所有关系
   const relSql = `
     SELECT r.*, rt.name as type_name, rt.direction as type_direction, rt.color as type_color, rt.category as type_category,
-      c1.name as source_name, c1.chinese_name as source_chinese_name,
-      c2.name as target_name, c2.chinese_name as target_chinese_name
+      c1.name as source_name, c1.chinese_name as source_chinese_name, c1.image_url as source_image_url,
+      c2.name as target_name, c2.chinese_name as target_chinese_name, c2.image_url as target_image_url
     FROM relationships r
     JOIN relation_types rt ON r.type_id = rt.id
     JOIN celebrities c1 ON r.source_id = c1.id
