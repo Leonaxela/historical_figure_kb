@@ -118,24 +118,15 @@ celebrity-graph/
 - type_id (关系类型)
 - description (描述)
 
-## 扩展性
-
-### 添加新的数据源
-继承 `BaseCrawler` 类，实现 `fetchCelebrities()` 方法，然后注册到 `ImportService`：
-
-```js
-import { BaseCrawler, importService } from './crawlers/index.js'
-
-class MyCrawler extends BaseCrawler {
-  constructor() { super('my-source') }
-  async fetchCelebrities() { /* 你的爬虫逻辑 */ }
-}
-
-importService.registerCrawler(new MyCrawler())
-```
 
 ### 添加新的关系类型
 通过 `/api/relationships/types` API 或直接插入 `relation_types` 表。
 
 ### 前端扩展
 Vue 组件按约定放在 `client/src/views/` 和 `client/src/components/`，路由在 `client/src/router/index.js` 中注册。
+
+## 安全
+
+- **路由守卫**：后台路由 `/admin/*` 通过 `router.beforeEach` 解码 JWT 检查过期时间，过期或无效 token 自动清除并跳转登录页
+- **API 拦截器**：axios 响应拦截器捕获 401 状态，自动清除 token 并重定向到 `/admin/login`
+

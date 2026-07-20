@@ -2,6 +2,20 @@ import axios from 'axios'
 
 const api = axios.create({ baseURL: '/api' })
 
+// 响应拦截器：401 时清除过期 token 并跳转登录
+api.interceptors.response.use(
+  r => r,
+  err => {
+    if (err.response?.status === 401) {
+      localStorage.removeItem('token')
+      localStorage.removeItem('username')
+      delete api.defaults.headers.common['Authorization']
+      window.location.href = '/admin/login'
+    }
+    return Promise.reject(err)
+  }
+)
+
 // 名人相关
 export const celebrityApi = {
   list(params) { return api.get('/celebrities', { params }).then(r => r.data) },

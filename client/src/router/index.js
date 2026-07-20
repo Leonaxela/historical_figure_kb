@@ -36,7 +36,6 @@ const router = createRouter({
   history: createWebHistory(),
   routes,
   scrollBehavior(to, from, savedPosition) {
-    // 从详情页返回看板时，由看板组件自己恢复滚动位置
     if (to.name === 'admin-dashboard' && sessionStorage.getItem('dashboardScrollY')) {
       return false
     }
@@ -44,11 +43,23 @@ const router = createRouter({
   },
 })
 
+// 解码 JWT payload 检查是否过期
+function isTokenExpired(token) {
+  try {
+    const payload = JSON.parse(atob(token.split('.')[1]))
+    return payload.exp * 1000 < Date.now()
+  } catch { return true }
+}
+
 // ── 路由守卫 ──
 router.beforeEach((to, from, next) => {
   const token = localStorage.getItem('token')
-  if (to.meta.requiresAuth && !token) {
-    return next('/admin/login')
+  if (to.meta.requiresAuth) {
+    if (!token || isTokenExpired(token)) {
+      localStorage.removeItem('token')
+      localStorage.removeItem('username')
+      return next('/admin/login')
+    }
   }
   next()
 })
