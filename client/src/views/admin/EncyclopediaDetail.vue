@@ -74,11 +74,13 @@
       <section id="timeline" v-if="timeline.length">
         <h2 class="section-title">⏳年表</h2>
         <table class="year-table">
-          <tr><th>时间</th><th>事件</th></tr>
+          <thead><tr><th>时间</th><th>事件</th></tr></thead>
+          <tbody>
           <tr v-for="ev in timeline" :key="ev.id">
             <td class="year">{{ ev.event_date }}</td>
             <td>{{ ev.title }}{{ ev.description ? '：' + ev.description : '' }}</td>
           </tr>
+          </tbody>
         </table>
       </section>
 

@@ -288,7 +288,7 @@ onUnmounted(() => { if (simulation) simulation.stop() })
 /* ── 基本信息卡片 ── */
 .profile-card { margin-bottom: 16px; border-radius: 12px; }
 .profile-row { display: flex; align-items: center; gap: 16px; }
-.profile-avatar { width: 56px; height: 56px; line-height: 56px; border-radius: 50%; background: linear-gradient(135deg, #409eff, #6366f1); color: #fff; font-size: 22px; font-weight: 700; text-align: center; flex-shrink: 0; overflow: hidden; }
+.profile-avatar { width: 90px; height: 90px; line-height: 90px; border-radius: 50%; background: linear-gradient(135deg, #409eff, #6366f1); color: #fff; font-size: 32px; font-weight: 700; text-align: center; flex-shrink: 0; overflow: hidden; }
 .profile-avatar img { width: 100%; height: 100%; object-fit: cover; }
 .profile-body { display: flex; flex-direction: column; gap: 2px; }
 .profile-name { font-size: 18px; font-weight: 700; color: #303133; }
