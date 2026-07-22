@@ -48,7 +48,7 @@ router.post('/:id', authMiddleware, upload.single('avatar'), (req, res) => {
   fs.writeFileSync(path.join(IMG_DIR, fileName), file.buffer);
 
   // 更新数据库
-  db.run('UPDATE celebrities SET image_url = ?, updated_at = datetime("now") WHERE id = ?', [fileName, id]);
+  db.run('UPDATE celebrities SET image_url = ?, updated_at = datetime("now","localtime") WHERE id = ?', [fileName, id]);
   saveDb();
 
   res.json({ success: true, data: { image_url: fileName } });

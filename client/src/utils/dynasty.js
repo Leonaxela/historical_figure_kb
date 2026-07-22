@@ -2,6 +2,10 @@
  * his_id 前缀 → 朝代名称 映射
  */
 export const dynastyMap = {
+  xia: '夏',
+  shang: '商',
+  xizhou: '西周',
+  dongzhou: '东周',
   chunqiu: '春秋',
   zhanguo: '战国',
   qin: '秦',
@@ -13,6 +17,7 @@ export const dynastyMap = {
   nanbei: '南北朝',
   sui: '隋',
   tang: '唐',
+  wudaishiguo: '五代十国',
   beisong: '北宋',
   nansong: '南宋',
   yuan: '元',

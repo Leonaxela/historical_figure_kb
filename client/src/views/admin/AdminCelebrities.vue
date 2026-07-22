@@ -4,7 +4,7 @@
     <div class="toolbar">
       <div class="toolbar-left">
         <el-button type="primary" :icon="Plus" @click="showCreate = true">新增名人</el-button>
-        <el-button type="primary" :icon="showCards ? List : Grid" @click="showCards = !showCards">{{ showCards ? '表格展示' : '展示名人' }}</el-button>
+        <el-button type="primary" :icon="showCards ? List : Grid" @click="showCards = !showCards">{{ showCards ? '表格展示' : '展示卡片' }}</el-button>
       </div>
       <div class="toolbar-right">
         <el-select v-model="filterTag" placeholder="称谓" clearable filterable style="width:150px" @change="onFilterChange">
@@ -169,9 +169,10 @@ const showCards = ref(true)
 const formRef = ref(null)
 
 const DYNASTY_LABELS = {
+  xia: '夏', shang: '商', xizhou: '西周', dongzhou: '东周',
   chunqiu: '春秋', zhanguo: '战国', qin: '秦', xihan: '西汉', donghan: '东汉',
   sanguo: '三国', xijin: '西晋', dongjin: '东晋', nanbei: '南北朝', sui: '隋',
-  tang: '唐', beisong: '北宋', nansong: '南宋', yuan: '元', ming: '明', qing: '清',
+  tang: '唐', wudaishiguo: '五代十国', beisong: '北宋', nansong: '南宋', yuan: '元', ming: '明', qing: '清',
 }
 const dynasties = Object.entries(DYNASTY_LABELS).map(([id, label]) => ({ id, label }))
 
@@ -316,7 +317,22 @@ async function loadList() {
 onMounted(() => {
   restoreFilters()
   loadList()
-  celebrityApi.nationalities().then(r => { nationalities.value = r.data || [] })
+  /* 对查询的朝代进行按字典排序 */
+  celebrityApi.nationalities().then(r => {
+    const raw = r.data || []
+    const order = ['夏','商','西周','东周','春秋','战国','秦','西汉','东汉','三国','西晋','东晋','南北朝','隋','唐','五代十国','北宋','南宋','辽','西夏','金','元','明','清']
+    nationalities.value = raw.sort((a, b) => {
+      const aIsChina = a.startsWith('中国_'), bIsChina = b.startsWith('中国_')
+      if (aIsChina && bIsChina) {
+        const ai = order.indexOf(a.replace('中国_', ''))
+        const bi = order.indexOf(b.replace('中国_', ''))
+        return (ai === -1 ? 999 : ai) - (bi === -1 ? 999 : bi)
+      }
+      if (aIsChina) return -1
+      if (bIsChina) return 1
+      return a.localeCompare(b)
+    })
+  })
   celebrityApi.occupations().then(r => { occupations.value = r.data || [] })
   tagApi.list().then(r => { tags.value = r.data || [] })
 })

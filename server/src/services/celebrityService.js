@@ -115,9 +115,10 @@ export function getCelebrity(id, includeHidden = false) {
 
 // 朝代名称 → 英文ID 映射（与前端 DYNASTY_LABELS 反向）
 const DYNASTY_MAP = {
+  '夏': 'xia', '商': 'shang', '西周': 'xizhou', '东周': 'dongzhou',
   '春秋': 'chunqiu', '战国': 'zhanguo', '秦': 'qin', '西汉': 'xihan', '东汉': 'donghan',
   '三国': 'sanguo', '西晋': 'xijin', '东晋': 'dongjin', '南北朝': 'nanbei', '隋': 'sui',
-  '唐': 'tang', '北宋': 'beisong', '南宋': 'nansong', '元': 'yuan', '明': 'ming', '清': 'qing',
+  '唐': 'tang', '五代十国': 'wudaishiguo', '北宋': 'beisong', '南宋': 'nansong', '元': 'yuan', '明': 'ming', '清': 'qing',
 }
 
 /**
@@ -168,7 +169,7 @@ export function updateCelebrity(id, data) {
 
   if (fields.length === 0) return false;
 
-  fields.push("updated_at = datetime('now')");
+  fields.push("updated_at = datetime('now','localtime')");
   params.push(id);
 
   db.run(`UPDATE celebrities SET ${fields.join(', ')} WHERE id = ?`, params);
